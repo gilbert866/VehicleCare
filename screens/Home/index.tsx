@@ -6,7 +6,7 @@ import {Colors} from '@/constants/Colors';
 const HomeScreen = () => {
     return (
         <View style={styles.container}>
-            <AppBar title="MechaNear" />
+            <AppBar title="VehicleCare" />
             <ScrollView contentContainerStyle={styles.content}>
                 <Text style={styles.welcome}>Welcome back!</Text>
                 <Text style={styles.subtitle}>Find nearby repair shops with ease.</Text>
