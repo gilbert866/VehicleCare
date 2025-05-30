@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
-import { styles } from '../styles/common';
+import { styles } from '@/styles/common';
 
 export default function VehicleRegistrationScreen() {
     const [make, setMake] = useState('');

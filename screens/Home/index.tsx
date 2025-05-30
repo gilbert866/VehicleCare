@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import AppBar from '../../components/AppBar/AppBar';
 import {Colors} from '@/constants/Colors';
+import FloatingChatButton from "@/components/FloatingChatButton/FloatingChatButton";
 
 const HomeScreen = () => {
     return (
@@ -15,6 +16,9 @@ const HomeScreen = () => {
                     source={{ uri: 'https://cdn-icons-png.flaticon.com/512/854/854894.png' }}
                 />
             </ScrollView>
+            <FloatingChatButton onPress={() => {
+                // navigate to chat screen or open chat modal
+            }} />
         </View>
     );
 };
