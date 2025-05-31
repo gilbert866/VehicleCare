@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "MechaNear",
-    "slug": "MechaNear",
+    "name": "VehilcleCare",
+    "slug": "Vehicle",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mechanear",
+    "scheme": "vehiclecare",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

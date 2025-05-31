@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { Colors} from "@/constants/Colors";
 
 export const styles = StyleSheet.create({
     container: {
@@ -54,6 +55,7 @@ export const styles = StyleSheet.create({
         marginVertical: 20,
     },
     description: {
-
-    }
+        fontSize: 16,
+        color: Colors.light.TEXT,
+        textAlign: 'center',    }
 });
