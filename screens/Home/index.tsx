@@ -2,9 +2,12 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import AppBar from '../../components/AppBar/AppBar';
 import {Colors} from '@/constants/Colors';
+import { useRouter } from 'expo-router';
 import FloatingChatButton from "@/components/FloatingChatButton/FloatingChatButton";
 
 const HomeScreen = () => {
+    const router = useRouter();
+
     return (
         <View style={styles.container}>
             <AppBar title="VehicleCare" />
@@ -16,9 +19,7 @@ const HomeScreen = () => {
                     source={{ uri: 'https://cdn-icons-png.flaticon.com/512/854/854894.png' }}
                 />
             </ScrollView>
-            <FloatingChatButton onPress={() => {
-                // navigate to chat screen or open chat modal
-            }} />
+            <FloatingChatButton onPress={() => router.push('/chat')} />
         </View>
     );
 };

@@ -1,9 +1,20 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Image } from 'react-native';
 import { styles } from '@/styles/common';
+import * as Battery from 'expo-battery';
+import { useRouter } from 'expo-router';
 import FloatingChatButton from '@/components/FloatingChatButton/FloatingChatButton';
 
 export default function BatteryMonitoringScreen() {
+
+    const [level, setLevel] = useState<number | null>(null);
+    const router = useRouter();
+
+    useEffect(() => {
+        Battery.getBatteryLevelAsync().then((lvl) => {
+            setLevel(Math.round(lvl * 100));
+        });
+    }, []);
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Battery Monitoring</Text>
@@ -13,11 +24,9 @@ export default function BatteryMonitoringScreen() {
                 resizeMode="contain"
             />
             <Text style={styles.description}>
-                Akouwa&#39;s GLI Coupe has an average battery health...
+                Battery level: {level !== null ? `${level}%` : 'Loading...'}
             </Text>
-            <FloatingChatButton onPress={() => {
-                // navigate to chat screen or open chat modal
-            }} />
+            <FloatingChatButton onPress={() => router.push('/chat')} />
         </View>
     );
 }
