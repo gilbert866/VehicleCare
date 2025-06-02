@@ -1,16 +1,45 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, ActivityIndicator } from 'react-native';
 import AppBar from '../../components/AppBar/AppBar';
+import MapView, { Marker } from 'react-native-maps';
+import * as Location from 'expo-location';
 import { Colors } from '@/constants/Colors';
 
 const ExploreScreen = () => {
+    const [region, setRegion] = useState(null);
+
+    useEffect(() => {
+        (async () => {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                alert('Permission to access location was denied');
+                return;
+            }
+
+            const location = await Location.getCurrentPositionAsync({});
+            setRegion({
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+            });
+        })();
+    }, []);
+
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <AppBar title="Explore" />
-            <View style={styles.body}>
-                <Text style={styles.text}>Explore nearby repair shops and services.</Text>
-            </View>
-        </View>
+            {region ? (
+                <MapView style={styles.map} region={region}>
+                    <Marker coordinate={region} title="You are here" />
+                </MapView>
+            ) : (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={Colors.light.PRIMARY} />
+                    <Text style={styles.text}>Loading map...</Text>
+                </View>
+            )}
+        </SafeAreaView>
     );
 };
 
@@ -21,11 +50,17 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: Colors.light.BACKGROUND,
     },
-    body: {
-        padding: 20,
+    map: {
+        flex: 1,
+    },
+    loadingContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     text: {
-        fontSize: 18,
+        fontSize: 16,
         color: Colors.light.TEXT,
+        marginTop: 12,
     },
 });

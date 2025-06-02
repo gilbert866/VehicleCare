@@ -16,6 +16,11 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCWrJ81TE0pvadRMKxwSvNk2Ja_1oqnY6k"
+        }
+      },
       "edgeToEdgeEnabled": true
     },
     "web": {
@@ -35,6 +40,9 @@
         }
       ]
     ],
+    "extra": {
+      "googleMapsApiKey": "$GOOGLE_MAPS_API_KEY"
+    },
     "experiments": {
       "typedRoutes": true
     }
