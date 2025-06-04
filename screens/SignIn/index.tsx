@@ -32,7 +32,7 @@ export default function SignInScreen() {
                 value={password}
                 onChangeText={setPassword}
             />
-            <TouchableOpacity style={styles.button} onPress={() => router.replace('/home')}>
+            <TouchableOpacity style={styles.button} onPress={() => router.replace('/explore')}>
                 <Text style={styles.buttonText}>Sign In</Text>
             </TouchableOpacity>
         </View>
