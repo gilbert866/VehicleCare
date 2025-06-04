@@ -4,9 +4,12 @@ import AppBar from '../../components/AppBar/AppBar';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Colors } from '@/constants/Colors';
+import FloatingChatButton from '@/components/FloatingChatButton/FloatingChatButton';
+import { useRouter } from 'expo-router';
 
 const ExploreScreen = () => {
     const [region, setRegion] = useState(null);
+    const router = useRouter();
 
     useEffect(() => {
         (async () => {
@@ -39,6 +42,7 @@ const ExploreScreen = () => {
                     <Text style={styles.text}>Loading map...</Text>
                 </View>
             )}
+            <FloatingChatButton onPress={() => router.push('/chat')} />
         </SafeAreaView>
     );
 };
