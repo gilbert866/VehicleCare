@@ -57,5 +57,8 @@ export const styles = StyleSheet.create({
     description: {
         fontSize: 16,
         color: Colors.light.TEXT,
-        textAlign: 'center',    }
+        textAlign: 'center',
+    },
+
+
 });
