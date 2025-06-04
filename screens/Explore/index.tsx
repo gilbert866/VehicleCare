@@ -17,7 +17,7 @@ import SearchBar from '@/components/SeacrchBar/SearchBar';
 import axios from 'axios';
 
 
-const GOOGLE_API_KEY = 'AIzaSyCWrJ81TE0pvadRMKxwSvNk2Ja_1oqnY6k'; // Ideally move this to env config
+const GOOGLE_API_KEY = 'AIzaSyCWrJ81TE0pvadRMKxwSvNk2Ja_1oqnY6k'; // To be moved into env for production
 
 const ExploreScreen = () => {
     const [region, setRegion] = useState<any>(null);
