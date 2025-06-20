@@ -1,6 +1,27 @@
-# Welcome to your Expo app 👋
+# VehicleCare App 🚗
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A React Native mobile application for vehicle maintenance and battery monitoring, built with Expo and TypeScript.
+
+## Features
+
+- 🔋 **Battery Monitoring**: Real-time battery level tracking
+- 📍 **Location Services**: Find nearby mechanics and service centers
+- 💬 **Chat Assistant**: AI-powered chat support for vehicle care
+- 🔐 **User Authentication**: Secure sign-in and sign-up functionality
+- 🗺️ **Interactive Maps**: Google Maps integration for service discovery
+
+## Architecture
+
+This project follows a clean architecture pattern with clear separation of concerns:
+
+- **Services**: Handle business logic and external API calls
+- **Hooks**: Manage state and coordinate between services and UI
+- **Components**: Reusable UI components
+- **Screens**: Screen-level components (UI only)
+- **Utils**: Helper functions and validation
+- **Types**: TypeScript interfaces and type definitions
+
+For detailed architecture information, see [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Get started
 
@@ -23,17 +44,34 @@ In the output, you'll find options to open the app in a
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
 - [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Project Structure
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+VehicleCare/
+├── app/              # Expo Router screens
+├── components/       # Reusable UI components
+├── screens/          # Screen components (UI only)
+├── services/         # Business logic and API calls
+├── hooks/            # Custom React hooks
+├── utils/            # Utility functions
+├── types/            # TypeScript interfaces
+├── constants/        # Configuration and constants
+└── styles/           # Styling utilities
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Key Technologies
+
+- **React Native**: Cross-platform mobile development
+- **Expo**: Development platform and tools
+- **TypeScript**: Type-safe JavaScript
+- **Expo Router**: File-based routing
+- **React Native Maps**: Map integration
+- **Expo Battery**: Battery monitoring
+- **Expo Location**: Location services
+
+## Development
+
+This project uses [file-based routing](https://docs.expo.dev/router/introduction) with Expo Router. You can start developing by editing the files inside the **app** directory.
 
 ## Learn more
 

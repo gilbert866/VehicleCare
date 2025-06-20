@@ -1,5 +1,5 @@
-import {Colors} from "@/constants/Colors";
-import {View, StyleSheet} from 'react-native';
+import { Colors } from "@/constants/Colors";
+import { StyleSheet } from 'react-native';
 
 const styles = StyleSheet.create({
     container: {
@@ -67,6 +67,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         borderRadius: 20,
         justifyContent: 'center',
+    },
+    sendButtonDisabled: {
+        backgroundColor: '#ccc',
+        opacity: 0.6,
     },
     sendText: {
         color: 'white',

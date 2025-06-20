@@ -1,82 +1,48 @@
-import React, { useEffect, useState } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    SafeAreaView,
-    ActivityIndicator,
-    Platform,
-} from 'react-native';
-import AppBar from '../../components/AppBar/AppBar';
-import MapView, { Marker } from 'react-native-maps';
-import * as Location from 'expo-location';
-import { Colors } from '@/constants/Colors';
 import FloatingChatButton from '@/components/FloatingChatButton/FloatingChatButton';
-import { useRouter } from 'expo-router';
 import SearchBar from '@/components/SeacrchBar/SearchBar';
-import axios from 'axios';
-
-
-const GOOGLE_API_KEY = 'AIzaSyCWrJ81TE0pvadRMKxwSvNk2Ja_1oqnY6k'; // To be moved into env for production
+import { Colors } from '@/constants/Colors';
+import { useLocation } from '@/hooks/useLocation';
+import { usePlaces } from '@/hooks/usePlaces';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    Platform,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    View,
+} from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
+import AppBar from '../../components/AppBar/AppBar';
 
 const ExploreScreen = () => {
-    const [region, setRegion] = useState<any>(null);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [places, setPlaces] = useState<any[]>([]);
     const router = useRouter();
+    const { location, loading: locationLoading, error: locationError } = useLocation();
+    const { places, searchQuery, setSearchQuery, loading: placesLoading, error: placesError } = usePlaces(location);
 
-    // Get user location once
-    useEffect(() => {
-        (async () => {
-            const { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-                alert('Permission to access location was denied');
-                return;
-            }
-
-            const location = await Location.getCurrentPositionAsync({});
-            setRegion({
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01,
-            });
-        })();
-    }, []);
-
-    // Debounced search effect
-    useEffect(() => {
-        const timeout = setTimeout(() => {
-            if (searchQuery.trim()) {
-                searchPlaces(searchQuery);
-            }
-        }, 500);
-        return () => clearTimeout(timeout);
-    }, [searchQuery]);
-
-    const searchPlaces = async (query: string) => {
-        if (!region) return;
-        const { latitude, longitude } = region;
-
-        const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=5000&keyword=${encodeURIComponent(
-            query
-        )}&key=${GOOGLE_API_KEY}`;
-
-        try {
-            const res = await axios.get(url);
-            setPlaces(res.data.results);
-        } catch (err) {
-            console.error('Places API error:', err);
+    React.useEffect(() => {
+        if (locationError) {
+            Alert.alert('Location Error', locationError);
         }
-    };
+    }, [locationError]);
+
+    React.useEffect(() => {
+        if (placesError) {
+            Alert.alert('Search Error', placesError);
+        }
+    }, [placesError]);
+
+    const isLoading = locationLoading || placesLoading;
 
     return (
         <SafeAreaView style={styles.container}>
             <AppBar title="Explore" />
-            {region ? (
+            {location ? (
                 <>
-                    <MapView style={styles.map} region={region}>
-                        <Marker coordinate={region} title="You are here" />
+                    <MapView style={styles.map} region={location}>
+                        <Marker coordinate={location} title="You are here" />
                         {places.map((place) => (
                             <Marker
                                 key={place.place_id}
@@ -102,7 +68,9 @@ const ExploreScreen = () => {
             ) : (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={Colors.light.PRIMARY} />
-                    <Text style={styles.text}>Loading map...</Text>
+                    <Text style={styles.text}>
+                        {isLoading ? 'Loading map...' : 'Unable to load location'}
+                    </Text>
                 </View>
             )}
 
