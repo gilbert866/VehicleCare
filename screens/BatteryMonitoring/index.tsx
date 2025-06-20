@@ -1,20 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Image } from 'react-native';
-import { styles } from '@/styles/common';
-import * as Battery from 'expo-battery';
-import { useRouter } from 'expo-router';
 import FloatingChatButton from '@/components/FloatingChatButton/FloatingChatButton';
+import { useBattery } from '@/hooks/useBattery';
+import { styles } from '@/styles/common';
+import { formattingUtils } from '@/utils/formatting';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Alert, Image, Text, View } from 'react-native';
 
 export default function BatteryMonitoringScreen() {
-
-    const [level, setLevel] = useState<number | null>(null);
     const router = useRouter();
+    const { batteryInfo, loading, error, refreshBatteryLevel } = useBattery();
 
-    useEffect(() => {
-        Battery.getBatteryLevelAsync().then((lvl) => {
-            setLevel(Math.round(lvl * 100));
-        });
-    }, []);
+    React.useEffect(() => {
+        if (error) {
+            Alert.alert('Error', error);
+        }
+    }, [error]);
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Battery Monitoring</Text>
@@ -24,8 +25,16 @@ export default function BatteryMonitoringScreen() {
                 resizeMode="contain"
             />
             <Text style={styles.description}>
-                Battery level: {level !== null ? `${level}%` : 'Loading...'}
+                {loading 
+                    ? 'Loading battery information...' 
+                    : `Battery level: ${formattingUtils.formatBatteryLevel(batteryInfo.level)}`
+                }
             </Text>
+            {batteryInfo.isCharging !== undefined && (
+                <Text style={styles.description}>
+                    Status: {formattingUtils.formatBatteryStatus(batteryInfo.level, batteryInfo.isCharging)}
+                </Text>
+            )}
             <FloatingChatButton onPress={() => router.push('/chat')} />
         </View>
     );
