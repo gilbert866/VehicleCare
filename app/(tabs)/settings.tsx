@@ -1,3 +1,10 @@
-import SettingsScreen from "../../screens/Settings/index"
+import AuthGuard from "@/components/AuthGuard";
+import SettingsScreen from "../../screens/Settings/index";
 
-export default SettingsScreen;
+export default function SettingsTab() {
+  return (
+    <AuthGuard>
+      <SettingsScreen />
+    </AuthGuard>
+  );
+}

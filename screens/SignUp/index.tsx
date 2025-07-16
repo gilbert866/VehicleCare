@@ -1,18 +1,21 @@
+import { useAuth } from '@/hooks/useAuth';
 import { styles } from '@/styles/common';
 import { validationUtils } from '@/utils/validation';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function SignUpScreen() {
     const router = useRouter();
+    const { signUp } = useAuth();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [errors, setErrors] = useState<string[]>([]);
+    const [loading, setLoading] = useState(false);
 
-    const handleSignUp = () => {
+    const handleSignUp = async () => {
         const validation = validationUtils.validateAuthCredentials({
             name,
             email,
@@ -36,8 +39,17 @@ export default function SignUpScreen() {
         }
 
         setErrors([]);
-        // TODO: Implement actual sign up logic
-        router.replace('/explore');
+        setLoading(true);
+
+        try {
+            await signUp(email, password, name);
+            router.replace('/(tabs)/explore');
+        } catch (error: any) {
+            setErrors([error.message]);
+            Alert.alert('Sign Up Error', error.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -48,6 +60,7 @@ export default function SignUpScreen() {
                 placeholder="Name"
                 value={name}
                 onChangeText={setName}
+                editable={!loading}
             />
             <TextInput
                 style={styles.input}
@@ -56,6 +69,7 @@ export default function SignUpScreen() {
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                editable={!loading}
             />
             <TextInput
                 style={styles.input}
@@ -63,6 +77,7 @@ export default function SignUpScreen() {
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
+                editable={!loading}
             />
             <TextInput
                 style={styles.input}
@@ -70,11 +85,20 @@ export default function SignUpScreen() {
                 secureTextEntry
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
+                editable={!loading}
             />
-            <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-                <Text style={styles.buttonText}>Sign Up</Text>
+            <TouchableOpacity 
+                style={[styles.button, loading && styles.buttonDisabled]} 
+                onPress={handleSignUp}
+                disabled={loading}
+            >
+                {loading ? (
+                    <ActivityIndicator color="#fff" />
+                ) : (
+                    <Text style={styles.buttonText}>Sign Up</Text>
+                )}
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/signin')}>
+            <TouchableOpacity onPress={() => router.push('/signin')} disabled={loading}>
                 <Text style={styles.link}>Already have an account? Sign In</Text>
             </TouchableOpacity>
         </View>

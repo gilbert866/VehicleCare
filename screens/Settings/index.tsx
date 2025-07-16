@@ -1,23 +1,25 @@
+import { Colors } from '@/constants/Colors';
+import { useAuth } from '@/hooks/useAuth';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-    View,
-    Text,
+    Alert,
+    Image,
     StyleSheet,
     Switch,
+    Text,
     TouchableOpacity,
-    Image,
-    Alert,
+    View,
 } from 'react-native';
 import AppBar from '../../components/AppBar/AppBar';
-import { Colors } from '@/constants/Colors';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
 
 const SettingsScreen: React.FC = () => {
     const [isDarkMode, setIsDarkMode] = React.useState(false);
     const [language, setLanguage] = React.useState<'en' | 'fr'>('en');
     const router = useRouter();
+    const { user, signOut } = useAuth();
 
     const toggleLanguage = () => {
         setLanguage((prev) => (prev === 'en' ? 'fr' : 'en'));
@@ -29,9 +31,13 @@ const SettingsScreen: React.FC = () => {
             {
                 text: 'Logout',
                 style: 'destructive',
-                onPress: () => {
-                    // Clear session and navigate to login
-                    router.replace('/signin');
+                onPress: async () => {
+                    try {
+                        await signOut();
+                        router.replace('/');
+                    } catch (error: any) {
+                        Alert.alert('Error', 'Failed to logout. Please try again.');
+                    }
                 },
             },
         ]);
@@ -52,8 +58,8 @@ const SettingsScreen: React.FC = () => {
                     style={styles.avatar}
                 />
                 <View>
-                    <Text style={styles.name}>John Doe</Text>
-                    <Text style={styles.email}>john.doe@example.com</Text>
+                    <Text style={styles.name}>{user?.displayName || 'User'}</Text>
+                    <Text style={styles.email}>{user?.email || 'No email'}</Text>
                 </View>
             </View>
 

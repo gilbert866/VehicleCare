@@ -1,3 +1,10 @@
-import BatteryMonitoringScreen from "../../screens/BatteryMonitoring/index"
+import AuthGuard from "@/components/AuthGuard";
+import BatteryMonitoringScreen from "../../screens/BatteryMonitoring/index";
 
-export default  BatteryMonitoringScreen
+export default function MonitoringTab() {
+  return (
+    <AuthGuard>
+      <BatteryMonitoringScreen />
+    </AuthGuard>
+  );
+}

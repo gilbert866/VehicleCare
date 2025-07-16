@@ -9,13 +9,15 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vehiclecare.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "package": "com.vehiclecare.app",
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyCWrJ81TE0pvadRMKxwSvNk2Ja_1oqnY6k"
