@@ -12,6 +12,7 @@ import {
     SafeAreaView,
     StyleSheet,
     Text,
+    TouchableOpacity,
     View,
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
@@ -19,12 +20,13 @@ import AppBar from '../../components/AppBar/AppBar';
 
 const ExploreScreen = () => {
     const router = useRouter();
-    const { location, loading: locationLoading, error: locationError } = useLocation();
+    const { location, loading: locationLoading, error: locationError, retryLocation } = useLocation();
     const { places, searchQuery, setSearchQuery, loading: placesLoading, error: placesError } = usePlaces(location);
 
     React.useEffect(() => {
         if (locationError) {
-            Alert.alert('Location Error', locationError);
+            // Don't show alert immediately, let user see the error state first
+            console.warn('Location error:', locationError);
         }
     }, [locationError]);
 
@@ -33,6 +35,14 @@ const ExploreScreen = () => {
             Alert.alert('Search Error', placesError);
         }
     }, [placesError]);
+
+    const handleRetryLocation = async () => {
+        try {
+            await retryLocation();
+        } catch (error) {
+            Alert.alert('Location Error', 'Failed to get location. Please check your device settings.');
+        }
+    };
 
     const isLoading = locationLoading || placesLoading;
 
@@ -64,6 +74,18 @@ const ExploreScreen = () => {
                             placeholder="Search mechanics..."
                         />
                     </View>
+
+                    {/* Show location error banner if there's an error but we have a fallback location */}
+                    {locationError && (
+                        <View style={styles.errorBanner}>
+                            <Text style={styles.errorText}>
+                                Using default location. {locationError}
+                            </Text>
+                            <TouchableOpacity onPress={handleRetryLocation} style={styles.retryButton}>
+                                <Text style={styles.retryText}>Retry</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
                 </>
             ) : (
                 <View style={styles.loadingContainer}>
@@ -71,6 +93,11 @@ const ExploreScreen = () => {
                     <Text style={styles.text}>
                         {isLoading ? 'Loading map...' : 'Unable to load location'}
                     </Text>
+                    {locationError && !isLoading && (
+                        <TouchableOpacity onPress={handleRetryLocation} style={styles.retryButton}>
+                            <Text style={styles.retryText}>Retry Location</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             )}
 
@@ -93,11 +120,13 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        padding: 20,
     },
     text: {
         fontSize: 16,
         color: Colors.light.TEXT,
         marginTop: 12,
+        textAlign: 'center',
     },
     searchWrapper: {
         position: 'absolute',
@@ -105,5 +134,35 @@ const styles = StyleSheet.create({
         left: 16,
         right: 16,
         zIndex: 10,
+    },
+    errorBanner: {
+        position: 'absolute',
+        top: Platform.OS === 'ios' ? 160 : 140,
+        left: 16,
+        right: 16,
+        backgroundColor: '#ffebee',
+        padding: 12,
+        borderRadius: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        zIndex: 5,
+    },
+    errorText: {
+        fontSize: 12,
+        color: '#c62828',
+        flex: 1,
+        marginRight: 8,
+    },
+    retryButton: {
+        backgroundColor: Colors.light.PRIMARY,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 4,
+    },
+    retryText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '600',
     },
 });

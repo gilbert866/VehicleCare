@@ -14,7 +14,14 @@ export const useLocation = () => {
             const currentLocation = await locationService.getCurrentLocation();
             setLocation(currentLocation);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to get location');
+            const errorMessage = err instanceof Error ? err.message : 'Failed to get location';
+            setError(errorMessage);
+            
+            // Set a default location as fallback
+            const defaultLocation = locationService.getDefaultLocation();
+            setLocation(defaultLocation);
+            
+            console.warn('Using default location due to error:', errorMessage);
         } finally {
             setLoading(false);
         }
@@ -28,8 +35,22 @@ export const useLocation = () => {
             );
             setLocation(newLocation);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to update location');
+            const errorMessage = err instanceof Error ? err.message : 'Failed to update location';
+            setError(errorMessage);
+            
+            // Update with current location and new delta if available
+            if (location) {
+                setLocation({
+                    ...location,
+                    latitudeDelta,
+                    longitudeDelta,
+                });
+            }
         }
+    };
+
+    const retryLocation = async () => {
+        await fetchCurrentLocation();
     };
 
     useEffect(() => {
@@ -42,5 +63,6 @@ export const useLocation = () => {
         error,
         fetchCurrentLocation,
         updateLocationWithDelta,
+        retryLocation,
     };
 }; 

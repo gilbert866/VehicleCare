@@ -1,5 +1,5 @@
+import { Colors } from "@/constants/Colors";
 import { StyleSheet } from 'react-native';
-import { Colors} from "@/constants/Colors";
 
 export const styles = StyleSheet.create({
     container: {
@@ -29,6 +29,10 @@ export const styles = StyleSheet.create({
         borderRadius: 10,
         alignItems: 'center',
         marginVertical: 10,
+    },
+    buttonDisabled: {
+        backgroundColor: '#ccc',
+        opacity: 0.6,
     },
     buttonText: {
         color: '#fff',
