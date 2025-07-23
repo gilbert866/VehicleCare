@@ -16,7 +16,7 @@ class BatteryService {
         try {
             const [level, isCharging, isLowPowerMode] = await Promise.all([
                 this.getBatteryLevel(),
-                Battery.isChargingAsync(),
+                Battery.isAvailableAsync(),
                 Battery.isLowPowerModeEnabledAsync(),
             ]);
 
@@ -33,7 +33,7 @@ class BatteryService {
 
     async isCharging(): Promise<boolean> {
         try {
-            return await Battery.isChargingAsync();
+            return await Battery.isAvailableAsync();
         } catch (error) {
             console.error('Error checking charging status:', error);
             throw error;
