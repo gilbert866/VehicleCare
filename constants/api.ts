@@ -4,11 +4,16 @@ export const API_CONFIG = {
     GOOGLE_PLACES_BASE_URL: 'https://maps.googleapis.com/maps/api/place',
     SEARCH_RADIUS: 5000, // meters
     SEARCH_DEBOUNCE_DELAY: 500, // milliseconds
+    BACKEND_BASE_URL: 'https://52ad0a4d6c81.ngrok-free.app/api',
 } as const;
 
 // API Endpoints
 export const ENDPOINTS = {
     PLACES_NEARBY_SEARCH: '/nearbysearch/json',
+    // Backend authentication endpoints
+    USER_REGISTER: '/users/register/',
+    USER_LOGIN: '/users/login/',
+    MECHANIC_FINDER: '/mechanicFinder/nearby-mechanics/',
 } as const;
 
 // HTTP Status Codes

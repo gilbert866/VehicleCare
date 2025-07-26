@@ -1,13 +1,15 @@
 import { authService, AuthUser } from '@/services/authService';
-import { User } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 
 export interface UseAuthReturn {
   user: AuthUser | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signIn: (emailOrUsername: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, displayName: string, username: string) => Promise<void>;
   signOut: () => Promise<void>;
+  getUserProfile: (uid: string) => Promise<any>;
+  updateUserProfile: (uid: string, updates: any) => Promise<void>;
+  isAuthenticated: () => Promise<boolean>;
 }
 
 export function useAuth(): UseAuthReturn {
@@ -15,33 +17,38 @@ export function useAuth(): UseAuthReturn {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = authService.onAuthStateChanged((firebaseUser: User | null) => {
-      if (firebaseUser) {
-        setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName
-        });
-      } else {
-        setUser(null);
+    const initializeAuth = async () => {
+      try {
+        const isAuth = await authService.isAuthenticated();
+        if (isAuth) {
+          const currentUser = authService.getCurrentUser();
+          setUser(currentUser);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
 
-    return unsubscribe;
+    initializeAuth();
   }, []);
 
-  const signIn = async (email: string, password: string): Promise<void> => {
+  const signIn = async (emailOrUsername: string, password: string): Promise<void> => {
     try {
-      await authService.signIn(email, password);
+      const authUser = await authService.signIn(emailOrUsername, password);
+      console.log('useAuth - signIn successful, setting user:', authUser);
+      setUser(authUser);
     } catch (error) {
       throw error;
     }
   };
 
-  const signUp = async (email: string, password: string, displayName: string): Promise<void> => {
+  const signUp = async (email: string, password: string, displayName: string, username: string): Promise<void> => {
     try {
-      await authService.signUp(email, password, displayName);
+      const authUser = await authService.signUp(email, password, displayName, username);
+      console.log('useAuth - signUp successful, setting user:', authUser);
+      setUser(authUser);
     } catch (error) {
       throw error;
     }
@@ -50,9 +57,22 @@ export function useAuth(): UseAuthReturn {
   const signOut = async (): Promise<void> => {
     try {
       await authService.signOut();
+      setUser(null);
     } catch (error) {
       throw error;
     }
+  };
+
+  const getUserProfile = async (uid: string) => {
+    return await authService.getUserProfile(uid);
+  };
+
+  const updateUserProfile = async (uid: string, updates: any) => {
+    await authService.updateUserProfile(uid, updates);
+  };
+
+  const isAuthenticated = async (): Promise<boolean> => {
+    return await authService.isAuthenticated();
   };
 
   return {
@@ -60,6 +80,9 @@ export function useAuth(): UseAuthReturn {
     loading,
     signIn,
     signUp,
-    signOut
+    signOut,
+    getUserProfile,
+    updateUserProfile,
+    isAuthenticated
   };
 } 
