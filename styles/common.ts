@@ -23,6 +23,16 @@ export const styles = StyleSheet.create({
         paddingHorizontal: 10,
         backgroundColor: '#fff',
     },
+    inputError: {
+        borderColor: '#ff6b6b',
+        borderWidth: 2,
+    },
+    errorText: {
+        color: '#ff6b6b',
+        fontSize: 12,
+        marginBottom: 8,
+        marginLeft: 4,
+    },
     button: {
         backgroundColor: '#6e6e6e',
         padding: 15,

@@ -1,0 +1,42 @@
+###
+GET http://127.0.0.1:8000/api/mechanicFinder/nearby-mechanics/?lat=5.62&lon=-0.19
+Content-Type: application/json
+
+# {
+#   "mechanics": [
+#     {
+#       "id": 1,
+#       "shop_name": "Joe's Auto",
+#       "latitude": 5.6205,
+#       "longitude": -0.1898,
+#       "distance_km": 1.32
+#     },
+#   ],
+#   "page": 1,
+#   "total_pages": 3
+# }
+
+
+###
+# Create a user - customer 
+POST http://127.0.0.1:8000/api/users/register/
+Content-Type: application/json
+
+{
+    "username": "lois",
+    "email": "lois@example.com",
+    "password": "2723",
+    "role": "customer"  
+}
+
+
+
+###
+# Login user
+POST http://127.0.0.1:8000/api/users/login/
+Content-Type: application/json
+
+{
+    "username": "lois",
+    "password": "2723"
+}

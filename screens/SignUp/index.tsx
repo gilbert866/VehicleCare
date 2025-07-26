@@ -1,8 +1,9 @@
 import { useAuth } from '@/hooks/useAuth';
 import { styles } from '@/styles/common';
+import { validateUsername } from '@/utils/usernameGenerator';
 import { validationUtils } from '@/utils/validation';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function SignUpScreen() {
@@ -10,31 +11,44 @@ export default function SignUpScreen() {
     const { signUp } = useAuth();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [usernameError, setUsernameError] = useState('');
     const [errors, setErrors] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
 
+    // Validate username when it changes
+    useEffect(() => {
+        if (username) {
+            const validation = validateUsername(username);
+            if (!validation.isValid) {
+                setUsernameError(validation.error || '');
+            } else {
+                setUsernameError('');
+            }
+        } else {
+            setUsernameError('');
+        }
+    }, [username]);
+
     const handleSignUp = async () => {
-        const validation = validationUtils.validateAuthCredentials({
+        const validation = validationUtils.validateRegistrationCredentials({
             name,
             email,
+            username,
             password,
         });
 
-        const newErrors: string[] = [];
-
         if (!validation.isValid) {
-            newErrors.push(...validation.errors);
+            setErrors(validation.errors);
+            Alert.alert('Validation Error', validation.errors.join('\n'));
+            return;
         }
 
         if (password !== confirmPassword) {
-            newErrors.push('Passwords do not match');
-        }
-
-        if (newErrors.length > 0) {
-            setErrors(newErrors);
-            Alert.alert('Validation Error', newErrors.join('\n'));
+            setErrors(['Passwords do not match']);
+            Alert.alert('Validation Error', 'Passwords do not match');
             return;
         }
 
@@ -42,7 +56,7 @@ export default function SignUpScreen() {
         setLoading(true);
 
         try {
-            await signUp(email, password, name);
+            await signUp(email, password, name, username);
             router.replace('/(tabs)/explore');
         } catch (error: any) {
             setErrors([error.message]);
@@ -57,7 +71,7 @@ export default function SignUpScreen() {
             <Text style={styles.title}>Create Account</Text>
             <TextInput
                 style={styles.input}
-                placeholder="Name"
+                placeholder="Full Name"
                 value={name}
                 onChangeText={setName}
                 editable={!loading}
@@ -71,6 +85,25 @@ export default function SignUpScreen() {
                 autoCapitalize="none"
                 editable={!loading}
             />
+            <TextInput
+                style={[styles.input, usernameError && styles.inputError]}
+                placeholder="Username"
+                value={username}
+                onChangeText={setUsername}
+                autoCapitalize="none"
+                editable={!loading}
+            />
+            {usernameError && (
+                <Text style={styles.errorText}>{usernameError}</Text>
+            )}
+            <Text style={{ 
+                color: '#666', 
+                fontSize: 11, 
+                marginBottom: 10,
+                fontStyle: 'italic'
+            }}>
+                Choose a unique username for your account (3-30 characters, letters, numbers, underscores)
+            </Text>
             <TextInput
                 style={styles.input}
                 placeholder="Password"

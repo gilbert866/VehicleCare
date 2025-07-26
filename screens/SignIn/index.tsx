@@ -8,15 +8,14 @@ import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } fro
 export default function SignInScreen() {
     const router = useRouter();
     const { signIn } = useAuth();
-    const [email, setEmail] = useState('');
+    const [emailOrUsername, setEmailOrUsername] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
 
     const handleSignIn = async () => {
-        const validation = validationUtils.validateAuthCredentials({
-            name: '', // Not needed for sign in
-            email,
+        const validation = validationUtils.validateLoginCredentials({
+            emailOrUsername,
             password,
         });
 
@@ -30,7 +29,7 @@ export default function SignInScreen() {
         setLoading(true);
 
         try {
-            await signIn(email, password);
+            await signIn(emailOrUsername, password);
             router.replace('/(tabs)/explore');
         } catch (error: any) {
             setErrors([error.message]);
@@ -43,11 +42,20 @@ export default function SignInScreen() {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Sign In</Text>
+            <Text style={{ 
+                color: '#666', 
+                fontSize: 14, 
+                textAlign: 'center', 
+                marginBottom: 20,
+                paddingHorizontal: 20
+            }}>
+                Use your email address or username to sign in to your account
+            </Text>
             <TextInput
                 style={styles.input}
-                placeholder="Email"
-                value={email}
-                onChangeText={setEmail}
+                placeholder="Email or Username"
+                value={emailOrUsername}
+                onChangeText={setEmailOrUsername}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 editable={!loading}

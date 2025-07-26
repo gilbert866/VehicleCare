@@ -1,3 +1,4 @@
+import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
@@ -60,8 +61,14 @@ const SettingsScreen: React.FC = () => {
                 <View>
                     <Text style={styles.name}>{user?.displayName || 'User'}</Text>
                     <Text style={styles.email}>{user?.email || 'No email'}</Text>
+                    {user?.username && (
+                        <Text style={styles.username}>@{user.username}</Text>
+                    )}
                 </View>
             </View>
+
+            {/* User Profile Details */}
+            <UserProfile showUsername={true} showEmail={true} showName={true} />
 
             {/* Divider */}
             <View style={styles.divider} />
@@ -115,6 +122,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 16,
+        paddingHorizontal: 16,
     },
     avatar: {
         width: 60,
@@ -131,6 +139,12 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#888',
     },
+    username: {
+        fontSize: 12,
+        color: '#007AFF',
+        fontWeight: '500',
+        marginTop: 2,
+    },
     divider: {
         height: 1,
         backgroundColor: '#ddd',
@@ -141,6 +155,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingVertical: 16,
+        paddingHorizontal: 16,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
     },

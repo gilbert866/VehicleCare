@@ -1,17 +1,11 @@
-import {
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut,
-  updateProfile,
-  User
-} from 'firebase/auth';
-import { auth } from './firebase';
+import { backendAuthService, BackendAuthUser } from './backendAuthService';
 
 export interface AuthUser {
   uid: string;
   email: string | null;
   displayName: string | null;
+  username?: string;
+  backendUser?: BackendAuthUser;
 }
 
 export interface AuthErrorResponse {
@@ -19,97 +13,156 @@ export interface AuthErrorResponse {
   message: string;
 }
 
-class AuthService {
-  // Sign up with email and password
-  async signUp(email: string, password: string, displayName: string): Promise<AuthUser> {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  username: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-      // Update profile with display name
-      await updateProfile(user, {
-        displayName: displayName
-      });
+class AuthService {
+  private currentBackendUser: BackendAuthUser | null = null;
+
+  // Sign up with email and password using backend
+  async signUp(email: string, password: string, displayName: string, username: string): Promise<AuthUser> {
+    try {
+      // Register with backend using provided username
+      const backendResponse = await backendAuthService.register(email, password, displayName, 'customer', username);
+      
+      // Store the backend user and token
+      this.currentBackendUser = backendResponse.user;
+      await backendAuthService.storeToken(backendResponse.token);
 
       return {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName
+        uid: backendResponse.user?.id?.toString() || '0',
+        email: email,
+        displayName: displayName,
+        username: backendResponse.user?.username || username,
+        backendUser: backendResponse.user
       };
     } catch (error: any) {
       throw this.handleAuthError(error);
     }
   }
 
-  // Sign in with email and password
-  async signIn(email: string, password: string): Promise<AuthUser> {
+  // Sign in with email and password using backend
+  async signIn(emailOrUsername: string, password: string): Promise<AuthUser> {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      // Login with backend (can handle both email and username)
+      const backendResponse = await backendAuthService.login(emailOrUsername, password);
+      
+      // Store the backend user and token
+      this.currentBackendUser = backendResponse.user;
+      await backendAuthService.storeToken(backendResponse.token);
 
       return {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName
+        uid: backendResponse.user?.id?.toString() || '0',
+        email: backendResponse.user?.email || emailOrUsername,
+        displayName: backendResponse.user?.username || emailOrUsername, // Use username as display name
+        username: backendResponse.user?.username || emailOrUsername,
+        backendUser: backendResponse.user
       };
     } catch (error: any) {
       throw this.handleAuthError(error);
+    }
+  }
+
+  // Get current backend user
+  getCurrentBackendUser(): BackendAuthUser | null {
+    return this.currentBackendUser;
+  }
+
+  // Get user profile
+  async getUserProfile(uid: string): Promise<UserProfile | null> {
+    try {
+      if (this.currentBackendUser) {
+        return {
+          uid: this.currentBackendUser.id?.toString() || '0',
+          email: this.currentBackendUser.email || '',
+          displayName: this.currentBackendUser.username || '',
+          username: this.currentBackendUser.username || '',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+      }
+      return null;
+    } catch (error: any) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+  }
+
+  // Update user profile
+  async updateUserProfile(uid: string, updates: Partial<UserProfile>): Promise<void> {
+    try {
+      // In a real implementation, you'd make an API call to update the user profile
+      console.log('Update user profile:', { uid, updates });
+    } catch (error: any) {
+      throw this.handleAuthError(error);
+    }
+  }
+
+  // Check if username is available
+  async isUsernameAvailable(username: string): Promise<boolean> {
+    try {
+      return await backendAuthService.isUsernameAvailable(username);
+    } catch (error: any) {
+      console.error('Error checking username availability:', error);
+      return false;
     }
   }
 
   // Sign out
   async signOut(): Promise<void> {
     try {
-      await signOut(auth);
+      // Clear backend token and stored data
+      await backendAuthService.clearStoredData();
+      this.currentBackendUser = null;
     } catch (error: any) {
       throw this.handleAuthError(error);
     }
   }
 
   // Get current user
-  getCurrentUser(): User | null {
-    return auth.currentUser;
+  getCurrentUser(): AuthUser | null {
+    if (this.currentBackendUser) {
+      return {
+        uid: this.currentBackendUser.id?.toString() || '0',
+        email: this.currentBackendUser.email || '',
+        displayName: this.currentBackendUser.username || '',
+        username: this.currentBackendUser.username || '',
+        backendUser: this.currentBackendUser
+      };
+    }
+    return null;
   }
 
-  // Listen to auth state changes
-  onAuthStateChanged(callback: (user: User | null) => void): () => void {
-    return onAuthStateChanged(auth, callback);
+  // Listen to auth state changes (simplified for backend-only)
+  onAuthStateChanged(callback: (user: AuthUser | null) => void): () => void {
+    // For backend-only auth, we'll call the callback immediately with current state
+    const currentUser = this.getCurrentUser();
+    callback(currentUser);
+    
+    // Return a no-op unsubscribe function
+    return () => {};
   }
 
-  // Handle Firebase auth errors
+  // Check if user is authenticated (backend)
+  async isAuthenticated(): Promise<boolean> {
+    return await backendAuthService.isAuthenticated();
+  }
+
+  // Handle auth errors
   private handleAuthError(error: any): AuthErrorResponse {
     let message = 'An error occurred during authentication';
     
-    switch (error.code) {
-      case 'auth/email-already-in-use':
-        message = 'An account with this email already exists';
-        break;
-      case 'auth/invalid-email':
-        message = 'Invalid email address';
-        break;
-      case 'auth/operation-not-allowed':
-        message = 'Email/password accounts are not enabled';
-        break;
-      case 'auth/weak-password':
-        message = 'Password should be at least 6 characters';
-        break;
-      case 'auth/user-disabled':
-        message = 'This account has been disabled';
-        break;
-      case 'auth/user-not-found':
-        message = 'No account found with this email';
-        break;
-      case 'auth/wrong-password':
-        message = 'Incorrect password';
-        break;
-      case 'auth/too-many-requests':
-        message = 'Too many failed attempts. Please try again later';
-        break;
-      case 'auth/network-request-failed':
-        message = 'Network error. Please check your connection';
-        break;
-      default:
-        message = error.message || message;
+    // Handle backend errors
+    if (error.message && typeof error.message === 'string') {
+      message = error.message;
+    } else {
+      message = error.message || message;
     }
 
     return {
