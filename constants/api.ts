@@ -1,19 +1,18 @@
 // API Configuration
 export const API_CONFIG = {
-    GOOGLE_PLACES_API_KEY: 'AIzaSyCWrJ81TE0pvadRMKxwSvNk2Ja_1oqnY6k', // TODO: Move to environment variables
-    GOOGLE_PLACES_BASE_URL: 'https://maps.googleapis.com/maps/api/place',
     SEARCH_RADIUS: 5000, // meters
     SEARCH_DEBOUNCE_DELAY: 500, // milliseconds
-    BACKEND_BASE_URL: "https://688a587b1b7e.ngrok-free.app/api",
+    BACKEND_BASE_URL: "https://fe64eed9cc88.ngrok-free.app/api",
 } as const;
 
 // API Endpoints
 export const ENDPOINTS = {
-    PLACES_NEARBY_SEARCH: '/nearbysearch/json',
     // Backend authentication endpoints
     USER_REGISTER: '/users/register/',
     USER_LOGIN: '/users/login/',
     MECHANIC_FINDER: '/mechanicFinder/nearby-mechanics/',
+    // Chat assistant endpoint
+    CHAT: '/chatbot/chat/',
 } as const;
 
 // HTTP Status Codes

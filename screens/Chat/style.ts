@@ -9,6 +9,7 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
         backgroundColor: Colors.light.PRIMARY,
         paddingTop: 50,
         paddingBottom: 15,
@@ -23,6 +24,14 @@ const styles = StyleSheet.create({
         color: Colors.light.WHITE,
         fontSize: 18,
         fontWeight: 'bold',
+        flex: 1,
+        textAlign: 'center',
+    },
+    clearButton: {
+        color: Colors.light.WHITE,
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 12,
     },
     messages: {
         padding: 16,

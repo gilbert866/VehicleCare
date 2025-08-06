@@ -40,3 +40,24 @@ Content-Type: application/json
     "username": "lois",
     "password": "2723"
 }
+
+###
+# Chat with assistant
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+
+{
+    "message": "Hello, I need help with my vehicle battery"
+}
+
+# Expected Response:
+# {
+#   "data": {
+#     "response": "I can help you with battery-related issues. Are you experiencing problems with your vehicle's battery?",
+#     "user_id": "1",
+#     "timestamp": "2024-01-20T10:30:00Z"
+#   },
+#   "responseCode": "000",
+#   "responseMessage": "Message sent successfully"
+# }

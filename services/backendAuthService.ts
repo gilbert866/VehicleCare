@@ -177,7 +177,9 @@ class BackendAuthService {
    */
   async storeToken(token: string): Promise<void> {
     try {
+      console.log('Backend auth service - Storing token:', token ? 'Token exists' : 'No token');
       await AsyncStorage.setItem('auth_token', token);
+      console.log('Backend auth service - Token stored successfully');
     } catch (error) {
       console.error('Error storing token:', error);
     }

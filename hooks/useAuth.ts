@@ -27,7 +27,7 @@ export function useAuth(): UseAuthReturn {
       } catch (error) {
         console.error('Error initializing auth:', error);
       } finally {
-        setLoading(false);
+      setLoading(false);
       }
     };
 
