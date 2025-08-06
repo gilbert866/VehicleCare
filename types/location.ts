@@ -1,4 +1,4 @@
-// Location and map related types
+// Location types for device GPS functionality
 export interface Location {
     latitude: number;
     longitude: number;
@@ -10,11 +10,4 @@ export interface LocationState {
     location: Location | null;
     loading: boolean;
     error: string | null;
-    hasPermission: boolean;
-}
-
-export interface LocationPermission {
-    granted: boolean;
-    canAskAgain: boolean;
-    status: 'granted' | 'denied' | 'restricted' | 'undetermined';
 } 

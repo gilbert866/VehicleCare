@@ -1,47 +1,54 @@
 import { API_CONFIG, ENDPOINTS } from '@/constants/api';
 import { MechanicError, NearbyMechanicsResponse } from '@/types/mechanic';
+import { fetchWithTimeout } from '@/utils/fetchWithTimeout';
 
 class MechanicService {
   private baseURL = API_CONFIG.BACKEND_BASE_URL;
+  private readonly MECHANICS_LIMIT = API_CONFIG.MECHANICS_LIMIT;
 
   /**
-   * Get nearby mechanics based on latitude and longitude
+   * Get nearby mechanics from the backend
    */
   async getNearbyMechanics(lat: number, lon: number, page: number = 1): Promise<NearbyMechanicsResponse> {
     try {
-      const url = `${this.baseURL}${ENDPOINTS.MECHANIC_FINDER}?lat=${lat}&lon=${lon}&page=${page}`;
+      console.log(`MechanicService - Fetching mechanics for lat=${lat.toFixed(4)}, lon=${lon.toFixed(4)}, page=${page}`);
       
-      console.log('Fetching nearby mechanics:', url);
+      const url = `${this.baseURL}${ENDPOINTS.MECHANIC_FINDER}?lat=${lat}&lon=${lon}&page=${page}&limit=${this.MECHANICS_LIMIT}`;
+      console.log(`MechanicService - Request URL: ${url}`);
 
-      const response = await fetch(url, {
+      const response = await fetchWithTimeout(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
         },
-      });
+      }, 10000); // 10 second timeout
 
-      const data = await response.json();
+      console.log(`MechanicService - Response status: ${response.status}`);
 
       if (!response.ok) {
-        throw this.handleError(response.status, data);
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw this.handleError(response.status, errorData);
       }
 
-      console.log('Nearby mechanics response:', data);
+      const data = await response.json();
+      console.log(`MechanicService - Response received with ${Object.keys(data).length} keys`);
 
-      // Handle the nested response structure if needed
+      // Handle different response structures
       const responseData = data.data || data;
+      const mechanics = responseData.mechanics || [];
+
+      console.log(`MechanicService - Found ${mechanics.length} mechanics`);
 
       return {
-        mechanics: responseData.mechanics || [],
+        mechanics,
         page: responseData.page || page,
         total_pages: responseData.total_pages || 1
       };
+      
     } catch (error: any) {
-      console.error('Error fetching nearby mechanics:', error);
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Failed to fetch nearby mechanics. Please try again.');
+      console.error(`MechanicService - Error:`, error.message);
+      throw error instanceof Error ? error : new Error('Failed to fetch nearby mechanics');
     }
   }
 
@@ -63,22 +70,18 @@ class MechanicService {
           message = 'Invalid location parameters';
           break;
         case 404:
-          message = 'No mechanics found in this area';
+          message = 'No mechanics found in your area';
           break;
         case 500:
-          message = 'Server error. Please try again later';
+          message = 'Server error occurred';
           break;
         default:
-          message = 'Failed to fetch nearby mechanics';
+          message = `Request failed with status ${status}`;
       }
     }
 
-    return {
-      message,
-      status
-    };
+    return new Error(message) as MechanicError;
   }
 }
 
 export const mechanicService = new MechanicService();
-export default mechanicService; 

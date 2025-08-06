@@ -1,4 +1,4 @@
-// Export all types from their respective domain files
+// Export backend-related types and device types
 export * from './api';
 export * from './auth';
 export * from './battery';
@@ -23,19 +23,4 @@ export interface ThemeColors {
 export interface AppTheme {
     light: ThemeColors;
     dark: ThemeColors;
-}
-
-// Navigation types
-export interface NavigationState {
-    currentRoute: string;
-    previousRoute?: string;
-    params?: Record<string, any>;
-}
-
-// App state types
-export interface AppState {
-    theme: 'light' | 'dark';
-    isLoading: boolean;
-    error: string | null;
-    networkStatus: 'online' | 'offline';
 } 

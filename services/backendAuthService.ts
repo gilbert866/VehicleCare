@@ -1,5 +1,6 @@
 import { API_CONFIG, ENDPOINTS, HTTP_STATUS } from '@/constants/api';
-import { BackendAuthError, BackendLoginRequest, BackendRegisterRequest, LoginResponse, RegisterResponse } from '@/types/auth';
+import { BackendAuthError, BackendAuthUser, BackendLoginRequest, BackendRegisterRequest, LoginResponse, RegisterResponse } from '@/types/auth';
+import { fetchWithTimeout } from '@/utils/fetchWithTimeout';
 import { generateUniqueUsernameFromEmail } from '@/utils/usernameGenerator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -10,7 +11,6 @@ class BackendAuthService {
    * Register a new user with the backend
    */
   async register(email: string, password: string, displayName: string, role: string = 'customer', username?: string): Promise<RegisterResponse> {
-    try {
       const finalUsername = username || generateUniqueUsernameFromEmail(email);
 
       const requestData: BackendRegisterRequest = {
@@ -20,13 +20,14 @@ class BackendAuthService {
         role
       };
 
-      const response = await fetch(`${this.baseURL}${ENDPOINTS.USER_REGISTER}`, {
+      const response = await fetchWithTimeout(`${this.baseURL}${ENDPOINTS.USER_REGISTER}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true', // Add ngrok header
         },
         body: JSON.stringify(requestData),
-      });
+      }, 10000); // 10 second timeout for auth requests
 
       const data = await response.json();
 
@@ -34,38 +35,32 @@ class BackendAuthService {
         throw this.handleBackendError(response.status, data);
       }
 
-      console.log('Registration response data:', data);
-
       const responseData = data.data || data;
       const userData = responseData.user || data.user || data;
       const tokens = responseData.tokens || data.tokens || {};
 
-      // Store auth data
-      await this.storeAuthData(finalUsername, email);
-
-      return {
-        user: {
+    const userObj = {
           id: userData.id || 0,
           username: userData.username || finalUsername,
           email: userData.email || email,
           role: userData.role || role
-        },
+    };
+
+    // Store auth data including user info
+    await this.storeAuthData(userObj.username, userObj.email);
+    await this.storeUserData(userObj);
+
+    return {
+      user: userObj,
         token: tokens.access || data.token || data.access_token || '',
         message: data.responseMessage || data.message || 'Registration successful'
       };
-    } catch (error: any) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Registration failed. Please try again.');
-    }
   }
 
   /**
    * Login user with the backend
    */
   async login(usernameOrEmail: string, password: string): Promise<LoginResponse> {
-    try {
       let username = usernameOrEmail;
       
       if (usernameOrEmail.includes('@')) {
@@ -82,98 +77,101 @@ class BackendAuthService {
         password
       };
 
-      const response = await fetch(`${this.baseURL}${ENDPOINTS.USER_LOGIN}`, {
+      const url = `${this.baseURL}${ENDPOINTS.USER_LOGIN}`;
+      console.log(`BackendAuthService - Making login request to: ${url}`);
+      console.log(`BackendAuthService - Request data:`, requestData);
+      
+      const response = await fetchWithTimeout(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true', // Add ngrok header
         },
         body: JSON.stringify(requestData),
-      });
+      }, 10000); // 10 second timeout for auth requests
+
+      console.log(`BackendAuthService - Login response status: ${response.status}`);
+      console.log(`BackendAuthService - Login response headers:`, Object.fromEntries(response.headers.entries()));
 
       const data = await response.json();
+      console.log(`BackendAuthService - Login response data:`, data);
 
       if (!response.ok) {
+        console.error(`BackendAuthService - Login failed with status ${response.status}:`, data);
         throw this.handleBackendError(response.status, data);
       }
-
-      console.log('Login response data:', data);
 
       const responseData = data.data || data;
       const userData = responseData.user || data.user || data;
       const tokens = responseData.tokens || data.tokens || {};
       
-      const userEmail = userData.email || usernameOrEmail;
-      const userUsername = userData.username || username;
+    const userObj = {
+      id: userData.id || 0,
+      username: userData.username || username,
+      email: userData.email || usernameOrEmail,
+      role: userData.role || 'customer'
+    };
 
-      // Store auth data
-      await this.storeAuthData(userUsername, userEmail);
+    // Store auth data including user info
+    await this.storeAuthData(userObj.username, userObj.email);
+    await this.storeUserData(userObj);
 
       return {
-        user: {
-          id: userData.id || 0,
-          username: userUsername,
-          email: userEmail,
-          role: userData.role || 'customer'
-        },
+      user: userObj,
         token: tokens.access || data.token || data.access_token || '',
         message: data.responseMessage || data.message || 'Login successful'
       };
-    } catch (error: any) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Login failed. Please try again.');
-    }
   }
 
   /**
    * Store authentication token
    */
   async storeToken(token: string): Promise<void> {
-    try {
-      console.log('Backend auth service - Storing token:', token ? 'Token exists' : 'No token');
       await AsyncStorage.setItem('auth_token', token);
-      console.log('Backend auth service - Token stored successfully');
-    } catch (error) {
-      console.error('Error storing token:', error);
-    }
   }
 
   /**
    * Get stored authentication token
    */
   async getToken(): Promise<string | null> {
-    try {
       return await AsyncStorage.getItem('auth_token');
-    } catch (error) {
-      console.error('Error getting token:', error);
-      return null;
-    }
   }
 
   /**
    * Remove stored authentication token
    */
   async removeToken(): Promise<void> {
-    try {
       await AsyncStorage.removeItem('auth_token');
-    } catch (error) {
-      console.error('Error removing token:', error);
-    }
   }
 
   /**
    * Store auth data (username and email)
    */
   private async storeAuthData(username: string, email: string): Promise<void> {
-    try {
       await AsyncStorage.multiSet([
         ['auth_username', username],
         ['auth_email', email],
         [`auth_username_${email}`, username]
       ]);
+  }
+
+  /**
+   * Store user data
+   */
+  async storeUserData(user: BackendAuthUser): Promise<void> {
+    await AsyncStorage.setItem('auth_user_data', JSON.stringify(user));
+  }
+
+  /**
+   * Get stored user data
+   */
+  async getUserData(): Promise<BackendAuthUser | null> {
+    try {
+      const userData = await AsyncStorage.getItem('auth_user_data');
+      return userData ? JSON.parse(userData) : null;
     } catch (error) {
-      console.error('Error storing auth data:', error);
+      console.error('Error getting user data:', error);
+      return null;
     }
   }
 
@@ -181,19 +179,13 @@ class BackendAuthService {
    * Get stored username for a specific email
    */
   private async getStoredUsernameForEmail(email: string): Promise<string | null> {
-    try {
       return await AsyncStorage.getItem(`auth_username_${email}`);
-    } catch (error) {
-      console.error('Error getting stored username for email:', error);
-      return null;
-    }
   }
 
   /**
    * Clear all stored auth data
    */
   async clearStoredData(): Promise<void> {
-    try {
       const keys = await AsyncStorage.getAllKeys();
       const authKeys = keys.filter(key => 
         key.startsWith('auth_') || 
@@ -203,9 +195,6 @@ class BackendAuthService {
       
       if (authKeys.length > 0) {
         await AsyncStorage.multiRemove(authKeys);
-      }
-    } catch (error) {
-      console.error('Error clearing stored data:', error);
     }
   }
 
@@ -213,21 +202,8 @@ class BackendAuthService {
    * Check if user is authenticated
    */
   async isAuthenticated(): Promise<boolean> {
-    try {
       const token = await this.getToken();
       return token !== null;
-    } catch (error) {
-      console.error('Error checking authentication:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Check if username is available (placeholder for future implementation)
-   */
-  async isUsernameAvailable(username: string): Promise<boolean> {
-    // TODO: Implement backend endpoint for username availability check
-    return true;
   }
 
   /**
@@ -236,7 +212,7 @@ class BackendAuthService {
   private handleBackendError(status: number, data: any): BackendAuthError {
     let message = 'An error occurred';
 
-    if (data.responseCode && data.responseMessage) {
+    if (data.responseMessage) {
       message = data.responseMessage;
     } else if (data.message) {
       message = data.message;
@@ -249,19 +225,12 @@ class BackendAuthService {
             message = `Username error: ${data.username.join(', ')}`;
           } else if (data.email) {
             message = `Email error: ${data.email.join(', ')}`;
-          } else if (data.password) {
-            message = `Password error: ${data.password.join(', ')}`;
-          } else if (data.non_field_errors) {
-            message = data.non_field_errors.join(', ');
           } else {
             message = 'Invalid request data';
           }
           break;
         case HTTP_STATUS.UNAUTHORIZED:
           message = 'Invalid credentials';
-          break;
-        case HTTP_STATUS.INTERNAL_SERVER_ERROR:
-          message = 'Server error. Please try again later';
           break;
         default:
           message = 'An unexpected error occurred';
@@ -276,4 +245,3 @@ class BackendAuthService {
 }
 
 export const backendAuthService = new BackendAuthService();
-export default backendAuthService; 

@@ -4,39 +4,48 @@ import * as ExpoLocation from 'expo-location';
 class LocationService {
     async requestLocationPermission(): Promise<boolean> {
         try {
+            console.log('LocationService - Requesting location permission...');
             const { status } = await ExpoLocation.requestForegroundPermissionsAsync();
+            console.log('LocationService - Permission status:', status);
             return status === 'granted';
         } catch (error) {
-            console.error('Error requesting location permission:', error);
+            console.error('LocationService - Error requesting location permission:', error);
             return false;
         }
     }
 
     async getCurrentLocation(): Promise<Location> {
         try {
+            console.log('LocationService - Getting current location...');
             const hasPermission = await this.requestLocationPermission();
             if (!hasPermission) {
                 throw new Error('Location permission denied. Please enable location services in your device settings.');
             }
 
             // Check if location services are enabled
+            console.log('LocationService - Checking if location services are enabled...');
             const isEnabled = await ExpoLocation.hasServicesEnabledAsync();
+            console.log('LocationService - Location services enabled:', isEnabled);
             if (!isEnabled) {
                 throw new Error('Location services are disabled. Please enable location services in your device settings.');
             }
 
+            console.log('LocationService - Requesting position...');
             const location = await ExpoLocation.getCurrentPositionAsync({
                 accuracy: ExpoLocation.Accuracy.Balanced,
                 timeInterval: 5000,
                 distanceInterval: 10,
             });
             
-            return {
+            const result = {
                 latitude: location.coords.latitude,
                 longitude: location.coords.longitude,
                 latitudeDelta: 0.01,
                 longitudeDelta: 0.01,
             };
+            
+            console.log('LocationService - Location obtained:', result);
+            return result;
         } catch (error) {
             console.error('Error getting current location:', error);
             
