@@ -1,4 +1,5 @@
-import { backendAuthService, BackendAuthUser } from './backendAuthService';
+import { BackendAuthUser } from '@/types/auth';
+import { backendAuthService } from './backendAuthService';
 
 export interface AuthUser {
   uid: string;

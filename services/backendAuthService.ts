@@ -1,43 +1,7 @@
 import { API_CONFIG, ENDPOINTS, HTTP_STATUS } from '@/constants/api';
+import { BackendAuthError, BackendLoginRequest, BackendRegisterRequest, LoginResponse, RegisterResponse } from '@/types/auth';
 import { generateUniqueUsernameFromEmail } from '@/utils/usernameGenerator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-export interface BackendAuthUser {
-  id: number;
-  username: string;
-  email: string;
-  role: string;
-  token?: string;
-}
-
-export interface BackendAuthError {
-  message: string;
-  status?: number;
-}
-
-export interface RegisterRequest {
-  username: string;
-  email: string;
-  password: string;
-  role: string;
-}
-
-export interface LoginRequest {
-  username: string;
-  password: string;
-}
-
-export interface RegisterResponse {
-  user: BackendAuthUser;
-  token: string;
-  message: string;
-}
-
-export interface LoginResponse {
-  user: BackendAuthUser;
-  token: string;
-  message: string;
-}
 
 class BackendAuthService {
   private baseURL = API_CONFIG.BACKEND_BASE_URL;
@@ -47,10 +11,9 @@ class BackendAuthService {
    */
   async register(email: string, password: string, displayName: string, role: string = 'customer', username?: string): Promise<RegisterResponse> {
     try {
-      // Use provided username or generate one from email
       const finalUsername = username || generateUniqueUsernameFromEmail(email);
 
-      const requestData: RegisterRequest = {
+      const requestData: BackendRegisterRequest = {
         username: finalUsername,
         email,
         password,
@@ -73,17 +36,13 @@ class BackendAuthService {
 
       console.log('Registration response data:', data);
 
-      // Handle the nested response structure
       const responseData = data.data || data;
       const userData = responseData.user || data.user || data;
       const tokens = responseData.tokens || data.tokens || {};
 
-      // Store username for future logins
-      await this.storeUsername(finalUsername);
-      await this.storeUsernameForEmail(email, finalUsername);
-      await this.storeEmail(email);
+      // Store auth data
+      await this.storeAuthData(finalUsername, email);
 
-      // Return a properly formatted response
       return {
         user: {
           id: userData.id || 0,
@@ -103,24 +62,22 @@ class BackendAuthService {
   }
 
   /**
-   * Login user with the backend using username
+   * Login user with the backend
    */
   async login(usernameOrEmail: string, password: string): Promise<LoginResponse> {
     try {
       let username = usernameOrEmail;
       
-      // If it looks like an email, try to get the stored username for that email
       if (usernameOrEmail.includes('@')) {
         const storedUsername = await this.getStoredUsernameForEmail(usernameOrEmail);
         if (storedUsername) {
           username = storedUsername;
         } else {
-          // If no stored username found, try using the email prefix as username
           username = usernameOrEmail.split('@')[0];
         }
       }
 
-      const requestData: LoginRequest = {
+      const requestData: BackendLoginRequest = {
         username,
         password
       };
@@ -141,7 +98,6 @@ class BackendAuthService {
 
       console.log('Login response data:', data);
 
-      // Handle the nested response structure
       const responseData = data.data || data;
       const userData = responseData.user || data.user || data;
       const tokens = responseData.tokens || data.tokens || {};
@@ -149,11 +105,9 @@ class BackendAuthService {
       const userEmail = userData.email || usernameOrEmail;
       const userUsername = userData.username || username;
 
-      // Store username and email for future reference
-      await this.storeUsername(userUsername);
-      await this.storeEmail(userEmail);
+      // Store auth data
+      await this.storeAuthData(userUsername, userEmail);
 
-      // Return a properly formatted response
       return {
         user: {
           id: userData.id || 0,
@@ -209,36 +163,17 @@ class BackendAuthService {
   }
 
   /**
-   * Store username for future logins
+   * Store auth data (username and email)
    */
-  private async storeUsername(username: string): Promise<void> {
+  private async storeAuthData(username: string, email: string): Promise<void> {
     try {
-      await AsyncStorage.setItem('auth_username', username);
+      await AsyncStorage.multiSet([
+        ['auth_username', username],
+        ['auth_email', email],
+        [`auth_username_${email}`, username]
+      ]);
     } catch (error) {
-      console.error('Error storing username:', error);
-    }
-  }
-
-  /**
-   * Store username associated with email for future logins
-   */
-  private async storeUsernameForEmail(email: string, username: string): Promise<void> {
-    try {
-      await AsyncStorage.setItem(`auth_username_${email}`, username);
-    } catch (error) {
-      console.error('Error storing username for email:', error);
-    }
-  }
-
-  /**
-   * Get stored username
-   */
-  async getStoredUsername(email?: string): Promise<string | null> {
-    try {
-      return await AsyncStorage.getItem('auth_username');
-    } catch (error) {
-      console.error('Error getting stored username:', error);
-      return null;
+      console.error('Error storing auth data:', error);
     }
   }
 
@@ -247,33 +182,9 @@ class BackendAuthService {
    */
   private async getStoredUsernameForEmail(email: string): Promise<string | null> {
     try {
-      const storedUsername = await AsyncStorage.getItem(`auth_username_${email}`);
-      return storedUsername;
+      return await AsyncStorage.getItem(`auth_username_${email}`);
     } catch (error) {
       console.error('Error getting stored username for email:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Store email for future reference
-   */
-  private async storeEmail(email: string): Promise<void> {
-    try {
-      await AsyncStorage.setItem('auth_email', email);
-    } catch (error) {
-      console.error('Error storing email:', error);
-    }
-  }
-
-  /**
-   * Get stored email
-   */
-  async getStoredEmail(): Promise<string | null> {
-    try {
-      return await AsyncStorage.getItem('auth_email');
-    } catch (error) {
-      console.error('Error getting stored email:', error);
       return null;
     }
   }
@@ -283,7 +194,6 @@ class BackendAuthService {
    */
   async clearStoredData(): Promise<void> {
     try {
-      // Get all keys and filter for auth-related ones
       const keys = await AsyncStorage.getAllKeys();
       const authKeys = keys.filter(key => 
         key.startsWith('auth_') || 
@@ -313,44 +223,11 @@ class BackendAuthService {
   }
 
   /**
-   * Check if username is available
+   * Check if username is available (placeholder for future implementation)
    */
   async isUsernameAvailable(username: string): Promise<boolean> {
-    try {
-      // This would require a backend endpoint to check username availability
-      // For now, we'll assume it's available
-      return true;
-    } catch (error: any) {
-      console.error('Error checking username availability:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Validate username format
-   */
-  validateUsernameFormat(username: string): { isValid: boolean; error?: string } {
-    if (!username || username.trim().length === 0) {
-      return { isValid: false, error: 'Username cannot be empty' };
-    }
-    
-    if (username.length < 3) {
-      return { isValid: false, error: 'Username must be at least 3 characters long' };
-    }
-    
-    if (username.length > 30) {
-      return { isValid: false, error: 'Username cannot exceed 30 characters' };
-    }
-    
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      return { isValid: false, error: 'Username can only contain letters, numbers, and underscores' };
-    }
-    
-    if (!/^[a-zA-Z0-9]/.test(username)) {
-      return { isValid: false, error: 'Username must start with a letter or number' };
-    }
-    
-    return { isValid: true };
+    // TODO: Implement backend endpoint for username availability check
+    return true;
   }
 
   /**
@@ -359,7 +236,6 @@ class BackendAuthService {
   private handleBackendError(status: number, data: any): BackendAuthError {
     let message = 'An error occurred';
 
-    // Handle the specific backend response format
     if (data.responseCode && data.responseMessage) {
       message = data.responseMessage;
     } else if (data.message) {
@@ -367,7 +243,6 @@ class BackendAuthService {
     } else if (data.detail) {
       message = data.detail;
     } else {
-      // Fallback to status-based messages
       switch (status) {
         case HTTP_STATUS.BAD_REQUEST:
           if (data.username) {

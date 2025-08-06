@@ -3,11 +3,15 @@
  */
 
 /**
- * Generates a username from an email address
+ * Generates a unique username by appending a random number if needed
  * @param email - The email address to generate username from
- * @returns A username based on the email
+ * @param existingUsernames - Array of existing usernames to check against
+ * @returns A unique username
  */
-export function generateUsernameFromEmail(email: string): string {
+export function generateUniqueUsernameFromEmail(
+  email: string, 
+  existingUsernames: string[] = []
+): string {
   // Remove domain part and special characters
   const localPart = email.split('@')[0];
   
@@ -32,20 +36,8 @@ export function generateUsernameFromEmail(email: string): string {
     username = 'user_' + username;
   }
   
-  return username.toLowerCase();
-}
-
-/**
- * Generates a unique username by appending a random number if needed
- * @param email - The email address to generate username from
- * @param existingUsernames - Array of existing usernames to check against
- * @returns A unique username
- */
-export function generateUniqueUsernameFromEmail(
-  email: string, 
-  existingUsernames: string[] = []
-): string {
-  let username = generateUsernameFromEmail(email);
+  username = username.toLowerCase();
+  
   let counter = 1;
   
   // Keep trying until we find a unique username
