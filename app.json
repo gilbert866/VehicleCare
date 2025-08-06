@@ -20,7 +20,7 @@
       "package": "com.vehiclecare.app",
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyDPF1KlnuPmI7RrrlrP9o5u_BvcAoR0gRY"
+          "apiKey": "$GOOGLE_MAPS_API_KEY"
         }
       },
       "edgeToEdgeEnabled": true
