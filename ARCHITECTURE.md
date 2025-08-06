@@ -1,16 +1,16 @@
 # VehicleCare Architecture
 
-This document outlines the refactored architecture that separates UI and business logic for better maintainability and testability.
+This document outlines the backend-focused architecture that uses backend endpoints and authentication types, plus essential device services.
 
 ## Directory Structure
 
 ```
 VehicleCare/
-├── types/           # TypeScript interfaces and types
-├── services/        # Business logic and API calls
-├── hooks/           # Custom React hooks for state management
+├── types/           # Backend TypeScript interfaces and device types
+├── services/        # Backend API services and device services
+├── hooks/           # Custom React hooks for backend and device state management
 ├── utils/           # Utility functions and helpers
-├── constants/       # Configuration and constants
+├── constants/       # API configuration and constants
 ├── components/      # Reusable UI components
 ├── screens/         # Screen components (UI only)
 └── styles/          # Styling utilities
@@ -18,57 +18,78 @@ VehicleCare/
 
 ## Architecture Principles
 
-### 1. Separation of Concerns
-- **UI Components**: Handle only presentation and user interactions
-- **Business Logic**: Managed in services and hooks
-- **Data Management**: Centralized in custom hooks
-- **API Calls**: Isolated in service classes
+### 1. Backend Services
+All backend services integrate directly with backend API endpoints:
 
-### 2. Service Layer
-Services handle external integrations and business operations:
+- `backendAuthService`: User authentication with JWT tokens
+- `chatService`: AI chat functionality with backend integration
+- `mechanicService`: Mechanic finder using backend API
 
-- `batteryService`: Battery monitoring operations
-- `chatService`: Chat functionality and message handling
-- `locationService`: Location permissions and coordinates
-- `mechanicService`: Mechanic shop data and API integration
+### 2. Device Services
+Essential device functionality services:
+
+- `locationService`: User's current location from device GPS (no backend needed)
 
 ### 3. Custom Hooks
 Hooks manage state and coordinate between services and UI:
 
-- `useBattery`: Battery state management
+- `useAuth`: Authentication state management with backend
 - `useChat`: Chat state and message handling
-- `useLocation`: Location state management
+- `useLocation`: User's current location state management
 - `useMechanics`: Mechanic shop data management
 
 ### 4. Type Safety
-All data structures are defined in TypeScript interfaces:
+All data structures use appropriate TypeScript interfaces:
 
+**Backend Types:**
+- `BackendAuthUser`: User authentication data
+- `BackendLoginRequest`/`BackendRegisterRequest`: Authentication requests
+- `LoginResponse`/`RegisterResponse`: Authentication responses
 - `Message`: Chat message structure
-- `Location`: Map coordinates and region
 - `Mechanic`: Mechanic shop information
-- `BatteryInfo`: Battery status information
-- `AuthCredentials`: Authentication data
+
+**Device Types:**
+- `Location`: User's GPS coordinates and map region
+
+## Backend API Endpoints
+
+### Authentication
+- `POST /api/users/register/` - User registration
+- `POST /api/users/login/` - User login
+
+### Services
+- `GET /api/mechanicFinder/nearby-mechanics/` - Find nearby mechanics
+- `POST /api/chatbot/chat/` - Chat with AI assistant
 
 ## Usage Examples
 
-### Using a Service
+### Using Backend Services
 ```typescript
-import { mechanicService } from '@/services';
+import { backendAuthService } from '@/services';
 
-const mechanics = await mechanicService.getNearbyMechanics(lat, lon);
+const response = await backendAuthService.login(username, password);
 ```
 
-### Using a Custom Hook
+### Using Device Services
 ```typescript
-import { useMechanics } from '@/hooks';
+import { locationService } from '@/services';
 
-const { mechanics, loading, error, fetchMechanics } = useMechanics();
+const location = await locationService.getCurrentLocation();
+```
+
+### Using Custom Hooks
+```typescript
+import { useAuth, useLocation } from '@/hooks';
+
+const { signIn, signUp, user, isAuthenticated } = useAuth();
+const { location, getCurrentLocation } = useLocation();
 ```
 
 ## Benefits
 
-1. **Maintainability**: Clear separation makes code easier to understand and modify
-2. **Testability**: Business logic can be tested independently of UI
-3. **Reusability**: Services and hooks can be reused across components
-4. **Type Safety**: Full TypeScript support with proper interfaces
-5. **Scalability**: Easy to add new features following established patterns 
+1. **Hybrid Architecture**: Backend services for data, device services for local functionality
+2. **Direct API Integration**: No unnecessary wrapper layers for backend calls
+3. **Device Integration**: Direct access to device GPS without backend dependency
+4. **Type Safety**: Full TypeScript support with appropriate interfaces
+5. **Maintainability**: Clear separation between backend and device concerns
+6. **Scalability**: Easy to add new backend endpoints or device services following established patterns 

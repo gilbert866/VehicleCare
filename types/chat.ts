@@ -1,4 +1,7 @@
-// Chat types
+import { Location } from './location';
+import { Mechanic } from './mechanic';
+
+// Chat types based on API documentation
 export interface Message {
     id: string;
     sender: 'user' | 'bot';
@@ -13,6 +16,19 @@ export interface ChatState {
     isTyping: boolean;
 }
 
+// API Request/Response types based on documentation
+export interface ChatbotRequest {
+    prompt: string;
+}
+
+export interface ChatbotResponse {
+    response: {
+        raw_response: string;
+        formatted_response: string;
+    };
+}
+
+// Legacy types for backward compatibility
 export interface ChatRequest {
     message: string;
     userId?: string;
@@ -28,23 +44,9 @@ export interface ChatResponse {
     mechanicRecommendations?: Mechanic[];
 }
 
-// Re-export types for convenience
-export interface Location {
-    latitude: number;
-    longitude: number;
-}
-
 export interface VehicleInfo {
     make?: string;
     model?: string;
     year?: number;
     issue?: string;
-}
-
-export interface Mechanic {
-    id: number;
-    shop_name: string;
-    latitude: number;
-    longitude: number;
-    distance_km: number;
 } 

@@ -1,10 +1,16 @@
 // Mechanic types
+import { Location } from './location';
+
 export interface Mechanic {
     id: number;
     shop_name: string;
     latitude: number;
     longitude: number;
-    distance_km: number;
+    distance_km?: number; // Made optional since API might not provide it
+    rating?: number;
+    user_ratings_total?: number;
+    phone_number?: string;
+    location?: string;
 }
 
 export interface MechanicState {
@@ -34,5 +40,3 @@ export interface MechanicFilters {
     rating?: number;
 }
 
-// Import Location type from location types
-import { Location } from './location';

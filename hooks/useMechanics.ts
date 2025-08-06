@@ -46,12 +46,19 @@ export function useMechanics(): UseMechanicsReturn {
         typeof mechanic.latitude === 'number' && 
         typeof mechanic.longitude === 'number' &&
         !isNaN(mechanic.latitude) && 
-        !isNaN(mechanic.longitude) &&
-        typeof mechanic.distance_km === 'number' &&
-        !isNaN(mechanic.distance_km)
+        !isNaN(mechanic.longitude)
+        // Removed distance_km validation - will be calculated client-side if missing
       );
 
       console.log('Valid mechanics found:', validMechanics.length, 'out of', response.mechanics.length);
+      
+      // Log sample mechanic data for debugging
+      if (response.mechanics.length > 0) {
+        console.log('Sample mechanic data:', JSON.stringify(response.mechanics[0], null, 2));
+      }
+      if (validMechanics.length > 0) {
+        console.log('Sample valid mechanic:', JSON.stringify(validMechanics[0], null, 2));
+      }
 
       const newMechanics = page === 1 ? validMechanics : [...state.mechanics, ...validMechanics];
       const hasMorePages = response.page < response.total_pages;

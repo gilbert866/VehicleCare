@@ -71,7 +71,7 @@ export const MechanicList: React.FC<MechanicListProps> = ({
     <FlatList
       data={mechanics}
       renderItem={renderMechanic}
-      keyExtractor={(item) => item.id.toString()}
+      keyExtractor={(item, index) => item.id ? item.id.toString() : `${item.latitude}-${item.longitude}-${index}`}
       ListFooterComponent={renderFooter}
       ListEmptyComponent={renderEmpty}
       onRefresh={onRefresh}

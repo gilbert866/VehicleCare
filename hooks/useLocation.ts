@@ -1,109 +1,70 @@
 import { locationService } from '@/services/locationService';
 import { Location, LocationState } from '@/types/location';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 export interface UseLocationReturn {
     location: Location | null;
     loading: boolean;
     error: string | null;
-    hasPermission: boolean;
-    fetchCurrentLocation: () => Promise<void>;
-    updateLocationWithDelta: (latitudeDelta: number, longitudeDelta: number) => Promise<void>;
-    retryLocation: () => Promise<void>;
+    getCurrentLocation: () => Promise<void>;
+    getLocationWithDelta: (latDelta?: number, lonDelta?: number) => Promise<void>;
+    clearError: () => void;
+    useDefaultLocation: () => void;
 }
 
 export const useLocation = (): UseLocationReturn => {
     const [state, setState] = useState<LocationState>({
         location: null,
-        loading: true,
+        loading: false,
         error: null,
-        hasPermission: false,
     });
 
     const updateState = useCallback((updates: Partial<LocationState>) => {
         setState(prev => ({ ...prev, ...updates }));
     }, []);
 
-    const fetchCurrentLocation = useCallback(async () => {
+    const getCurrentLocation = useCallback(async () => {
         try {
+            console.log('useLocation - Starting location request...');
             updateState({ loading: true, error: null });
-            const currentLocation = await locationService.getCurrentLocation();
-            updateState({ 
-                location: {
-                    ...currentLocation,
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                },
-                loading: false, 
-                hasPermission: true 
-            });
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to get location';
-            updateState({ 
-                error: errorMessage, 
-                loading: false, 
-                hasPermission: false 
-            });
-            
-            // Set a default location as fallback
-            const defaultLocation = locationService.getDefaultLocation();
-            updateState({ 
-                location: {
-                    ...defaultLocation,
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                }
-            });
-            
-            console.warn('Using default location due to error:', errorMessage);
+            const location = await locationService.getCurrentLocation();
+            console.log('useLocation - Location received:', location);
+            updateState({ location, loading: false });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to get location';
+            console.error('useLocation - Location error:', errorMessage);
+            updateState({ error: errorMessage, loading: false });
         }
     }, [updateState]);
 
-    const updateLocationWithDelta = useCallback(async (latitudeDelta: number, longitudeDelta: number) => {
+    const getLocationWithDelta = useCallback(async (latDelta?: number, lonDelta?: number) => {
         try {
-            const newLocation = await locationService.getLocationWithCustomDelta(
-                latitudeDelta,
-                longitudeDelta
-            );
-            updateState({ 
-                location: {
-                    ...newLocation,
-                    latitudeDelta,
-                    longitudeDelta,
-                }
-            });
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to update location';
-            updateState({ error: errorMessage });
-            
-            // Update with current location and new delta if available
-            if (state.location) {
-                updateState({
-                    location: {
-                        ...state.location,
-                        latitudeDelta,
-                        longitudeDelta,
-                    }
-                });
-            }
+            updateState({ loading: true, error: null });
+            const location = await locationService.getLocationWithCustomDelta(latDelta, lonDelta);
+            updateState({ location, loading: false });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to get location';
+            updateState({ error: errorMessage, loading: false });
         }
-    }, [state.location, updateState]);
+    }, [updateState]);
 
-    const retryLocation = useCallback(async () => {
-        await fetchCurrentLocation();
-    }, [fetchCurrentLocation]);
+    const clearError = useCallback(() => {
+        updateState({ error: null });
+    }, [updateState]);
 
-    useEffect(() => {
-        fetchCurrentLocation();
-    }, [fetchCurrentLocation]);
+    const useDefaultLocation = useCallback(() => {
+        const defaultLocation = locationService.getDefaultLocation();
+        console.log('useLocation - Using default location:', defaultLocation);
+        updateState({ location: defaultLocation, error: null, loading: false });
+    }, [updateState]);
 
     return {
         location: state.location,
         loading: state.loading,
         error: state.error,
-        hasPermission: state.hasPermission,
-        fetchCurrentLocation,
-        updateLocationWithDelta,
-        retryLocation,
+        getCurrentLocation,
+        getLocationWithDelta,
+        clearError,
+        useDefaultLocation,
     };
 }; 
