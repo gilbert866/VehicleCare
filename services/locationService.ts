@@ -1,10 +1,10 @@
 import { Location } from '@/types/location';
-import * as Location from 'expo-location';
+import * as ExpoLocation from 'expo-location';
 
 class LocationService {
     async requestLocationPermission(): Promise<boolean> {
         try {
-            const { status } = await Location.requestForegroundPermissionsAsync();
+            const { status } = await ExpoLocation.requestForegroundPermissionsAsync();
             return status === 'granted';
         } catch (error) {
             console.error('Error requesting location permission:', error);
@@ -20,13 +20,13 @@ class LocationService {
             }
 
             // Check if location services are enabled
-            const isEnabled = await Location.hasServicesEnabledAsync();
+            const isEnabled = await ExpoLocation.hasServicesEnabledAsync();
             if (!isEnabled) {
                 throw new Error('Location services are disabled. Please enable location services in your device settings.');
             }
 
-            const location = await Location.getCurrentPositionAsync({
-                accuracy: Location.Accuracy.Balanced,
+            const location = await ExpoLocation.getCurrentPositionAsync({
+                accuracy: ExpoLocation.Accuracy.Balanced,
                 timeInterval: 5000,
                 distanceInterval: 10,
             });
