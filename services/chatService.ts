@@ -1,5 +1,5 @@
 import { API_CONFIG, ENDPOINTS } from '@/constants/api';
-import { Message } from '@/types';
+import { Message } from '@/types/chat';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ChatRequest {
@@ -100,9 +100,10 @@ class ChatService {
      */
     createUserMessage(text: string): Message {
         return {
-            id: Date.now().toString() + '_user',
+            id: Date.now().toString(),
             sender: 'user',
             text: text.trim(),
+            timestamp: Date.now(),
         };
     }
 
@@ -111,9 +112,10 @@ class ChatService {
      */
     createBotMessage(text: string): Message {
         return {
-            id: Date.now().toString() + '_bot',
+            id: (Date.now() + 1).toString(),
             sender: 'bot',
             text: text.trim(),
+            timestamp: Date.now(),
         };
     }
 
@@ -121,52 +123,37 @@ class ChatService {
      * Get initial welcome message
      */
     getInitialMessage(): Message {
-        return {
-            id: 'initial',
-            sender: 'bot',
-            text: 'Hi! I\'m your vehicle care assistant. How can I help you with your vehicle today?',
-        };
+        return this.createBotMessage(
+            'Hello! I\'m your VehicleCare assistant. I can help you find nearby mechanics, answer questions about your vehicle, and provide maintenance tips. How can I help you today?'
+        );
     }
 
     /**
      * Get fallback response when API fails
      */
     private getFallbackResponse(userMessage: string): string {
-        const responses = [
-            "I understand your concern. Let me help you with that.",
-            "That's a great question! Here's what I can tell you...",
-            "I'm processing your request. Please wait a moment.",
-            "Thanks for reaching out! I'll assist you with this.",
-            "I'm here to help with your vehicle care needs. Could you please provide more details?",
-        ];
-
-        // Simple keyword-based responses
         const lowerMessage = userMessage.toLowerCase();
         
+        if (lowerMessage.includes('mechanic') || lowerMessage.includes('repair') || lowerMessage.includes('service')) {
+            return 'I can help you find nearby mechanics! Use the map to see mechanic shops in your area, or ask me about specific services you need.';
+        }
+        
         if (lowerMessage.includes('battery') || lowerMessage.includes('charge')) {
-            return "I can help you with battery-related issues. Are you experiencing problems with your vehicle's battery?";
+            return 'I can help you monitor your device battery. Check the battery monitoring section to see your current battery status and get tips for battery optimization.';
         }
         
-        if (lowerMessage.includes('engine') || lowerMessage.includes('motor')) {
-            return "Engine issues can be complex. Could you describe the specific problem you're experiencing?";
+        if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('hey')) {
+            return 'Hello! I\'m here to help with your vehicle care needs. You can ask me about mechanics, battery monitoring, or general vehicle questions.';
         }
         
-        if (lowerMessage.includes('mechanic') || lowerMessage.includes('repair')) {
-            return "I can help you find nearby mechanics. Would you like me to search for mechanics in your area?";
-        }
-        
-        if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-            return "Hello! I'm here to help with your vehicle care needs. What can I assist you with today?";
-        }
-
-        return responses[Math.floor(Math.random() * responses.length)];
+        return 'I\'m here to help with your vehicle care needs. You can ask me about finding mechanics, battery monitoring, or general vehicle questions.';
     }
 
     /**
      * Handle API errors
      */
     private handleError(status: number, data: any): ChatError {
-        let message = 'An error occurred while sending your message';
+        let message = 'An error occurred while processing your message';
 
         if (data.responseMessage) {
             message = data.responseMessage;
@@ -182,14 +169,17 @@ class ChatService {
                 case 401:
                     message = 'Authentication required. Please log in.';
                     break;
+                case 403:
+                    message = 'Access denied';
+                    break;
                 case 404:
-                    message = 'Chat service not available';
+                    message = 'Chat service not found';
                     break;
                 case 500:
                     message = 'Server error. Please try again later';
                     break;
                 default:
-                    message = 'Failed to send message';
+                    message = 'Failed to process message';
             }
         }
 

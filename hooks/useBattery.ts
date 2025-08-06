@@ -1,43 +1,66 @@
 import { batteryService } from '@/services/batteryService';
-import { BatteryInfo } from '@/types';
-import { useEffect, useState } from 'react';
+import { BatteryInfo, BatteryState } from '@/types/battery';
+import { useCallback, useEffect, useState } from 'react';
 
-export const useBattery = () => {
-    const [batteryInfo, setBatteryInfo] = useState<BatteryInfo>({ level: null });
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+export interface UseBatteryReturn {
+    batteryInfo: BatteryInfo;
+    loading: boolean;
+    error: string | null;
+    lastUpdated: number | null;
+    refreshBatteryStatus: () => Promise<void>;
+    clearError: () => void;
+}
 
-    const fetchBatteryInfo = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const info = await batteryService.getBatteryInfo();
-            setBatteryInfo(info);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to get battery info');
-        } finally {
-            setLoading(false);
-        }
-    };
+export const useBattery = (): UseBatteryReturn => {
+    const [state, setState] = useState<BatteryState>({
+        batteryInfo: {
+            level: null,
+            isCharging: false,
+            isLowPowerMode: false,
+        },
+        loading: true,
+        error: null,
+        lastUpdated: null,
+    });
 
-    const refreshBatteryLevel = async () => {
-        try {
-            const level = await batteryService.getBatteryLevel();
-            setBatteryInfo(prev => ({ ...prev, level }));
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to refresh battery level');
-        }
-    };
-
-    useEffect(() => {
-        fetchBatteryInfo();
+    const updateState = useCallback((updates: Partial<BatteryState>) => {
+        setState(prev => ({ ...prev, ...updates }));
     }, []);
 
+    const refreshBatteryStatus = useCallback(async () => {
+        try {
+            updateState({ loading: true, error: null });
+            
+            const batteryInfo = await batteryService.getBatteryInfo();
+            
+            updateState({
+                batteryInfo,
+                loading: false,
+                lastUpdated: Date.now(),
+            });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to get battery status';
+            updateState({
+                error: errorMessage,
+                loading: false,
+            });
+        }
+    }, [updateState]);
+
+    const clearError = useCallback(() => {
+        updateState({ error: null });
+    }, [updateState]);
+
+    useEffect(() => {
+        refreshBatteryStatus();
+    }, [refreshBatteryStatus]);
+
     return {
-        batteryInfo,
-        loading,
-        error,
-        refreshBatteryLevel,
-        fetchBatteryInfo,
+        batteryInfo: state.batteryInfo,
+        loading: state.loading,
+        error: state.error,
+        lastUpdated: state.lastUpdated,
+        refreshBatteryStatus,
+        clearError,
     };
 }; 

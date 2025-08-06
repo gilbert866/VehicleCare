@@ -1,4 +1,4 @@
-import { BatteryInfo } from '@/types';
+import { BatteryInfo } from '@/types/battery';
 import * as Battery from 'expo-battery';
 
 class BatteryService {

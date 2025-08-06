@@ -1,68 +1,78 @@
 import { chatService } from '@/services/chatService';
-import { Message } from '@/types';
-import { useCallback, useEffect, useState } from 'react';
+import { ChatState, Message } from '@/types/chat';
+import { useCallback, useState } from 'react';
 
-export const useChat = () => {
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [input, setInput] = useState('');
-    const [loading, setLoading] = useState(false);
+export interface UseChatReturn {
+    messages: Message[];
+    loading: boolean;
+    error: string | null;
+    isTyping: boolean;
+    sendMessage: (text: string) => Promise<void>;
+    clearMessages: () => void;
+    clearError: () => void;
+}
 
-    useEffect(() => {
-        // Initialize with welcome message
-        const initialMessage = chatService.getInitialMessage();
-        setMessages([initialMessage]);
+export const useChat = (): UseChatReturn => {
+    const [state, setState] = useState<ChatState>({
+        messages: [],
+        loading: false,
+        error: null,
+        isTyping: false,
+    });
+
+    const updateState = useCallback((updates: Partial<ChatState>) => {
+        setState(prev => ({ ...prev, ...updates }));
     }, []);
 
-    const sendMessage = useCallback(async () => {
-        if (!input.trim() || loading) return;
+    const sendMessage = useCallback(async (text: string) => {
+        if (!text.trim()) return;
 
-        const messageText = input.trim();
-        setInput(''); // Clear input immediately for better UX
+        const userMessage: Message = {
+            id: Date.now().toString(),
+            sender: 'user',
+            text: text.trim(),
+            timestamp: Date.now(),
+        };
+
+        // Add user message immediately
+        updateState({
+            messages: [...state.messages, userMessage],
+            isTyping: true,
+            error: null,
+        });
 
         try {
-            setLoading(true);
-            
-            // Add user message immediately
-            const userMessage = chatService.createUserMessage(messageText);
-            setMessages(prev => [...prev, userMessage]);
-            
-            // Send to backend and get response
-            const { botResponse } = await chatService.sendMessage(messageText);
+            const response = await chatService.sendMessage(text.trim());
             
             // Add bot response
-            setMessages(prev => [...prev, botResponse]);
-        } catch (error: any) {
-            console.error('Error sending message:', error);
-            
-            // Add error message to chat
-            const errorMessage: Message = {
-                id: Date.now().toString() + '_error',
-                sender: 'bot',
-                text: error.message || 'Sorry, I encountered an error. Please try again.',
-            };
-            setMessages(prev => [...prev, errorMessage]);
-        } finally {
-            setLoading(false);
+            updateState({
+                messages: [...state.messages, userMessage, response.botResponse],
+                isTyping: false,
+            });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
+            updateState({
+                error: errorMessage,
+                isTyping: false,
+            });
         }
-    }, [input, loading]);
+    }, [state.messages, updateState]);
 
-    const clearChat = useCallback(() => {
-        const initialMessage = chatService.getInitialMessage();
-        setMessages([initialMessage]);
-        setInput('');
-    }, []);
+    const clearMessages = useCallback(() => {
+        updateState({ messages: [] });
+    }, [updateState]);
 
-    const addMessage = useCallback((message: Message) => {
-        setMessages(prev => [...prev, message]);
-    }, []);
+    const clearError = useCallback(() => {
+        updateState({ error: null });
+    }, [updateState]);
 
     return {
-        messages,
-        input,
-        setInput,
-        loading,
+        messages: state.messages,
+        loading: state.loading,
+        error: state.error,
+        isTyping: state.isTyping,
         sendMessage,
-        clearChat,
-        addMessage,
+        clearMessages,
+        clearError,
     };
 }; 

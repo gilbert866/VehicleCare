@@ -30,7 +30,7 @@ Services handle external integrations and business operations:
 - `batteryService`: Battery monitoring operations
 - `chatService`: Chat functionality and message handling
 - `locationService`: Location permissions and coordinates
-- `placesService`: Google Places API integration
+- `mechanicService`: Mechanic shop data and API integration
 
 ### 3. Custom Hooks
 Hooks manage state and coordinate between services and UI:
@@ -38,14 +38,14 @@ Hooks manage state and coordinate between services and UI:
 - `useBattery`: Battery state management
 - `useChat`: Chat state and message handling
 - `useLocation`: Location state management
-- `usePlaces`: Places search and filtering
+- `useMechanics`: Mechanic shop data management
 
 ### 4. Type Safety
 All data structures are defined in TypeScript interfaces:
 
 - `Message`: Chat message structure
 - `Location`: Map coordinates and region
-- `Place`: Google Places API response
+- `Mechanic`: Mechanic shop information
 - `BatteryInfo`: Battery status information
 - `AuthCredentials`: Authentication data
 
@@ -53,80 +53,22 @@ All data structures are defined in TypeScript interfaces:
 
 ### Using a Service
 ```typescript
-import { batteryService } from '@/services';
+import { mechanicService } from '@/services';
 
-const level = await batteryService.getBatteryLevel();
+const mechanics = await mechanicService.getNearbyMechanics(lat, lon);
 ```
 
 ### Using a Custom Hook
 ```typescript
-import { useBattery } from '@/hooks';
+import { useMechanics } from '@/hooks';
 
-function BatteryScreen() {
-    const { batteryInfo, loading, error } = useBattery();
-    // UI logic here
-}
-```
-
-### Using Utilities
-```typescript
-import { validationUtils, formattingUtils } from '@/utils';
-
-const isValid = validationUtils.isValidEmail(email);
-const formatted = formattingUtils.formatBatteryLevel(level);
+const { mechanics, loading, error, fetchMechanics } = useMechanics();
 ```
 
 ## Benefits
 
-1. **Testability**: Business logic can be tested independently of UI
-2. **Reusability**: Services and hooks can be reused across components
-3. **Maintainability**: Clear separation makes code easier to understand and modify
-4. **Type Safety**: Strong typing prevents runtime errors
-5. **Scalability**: Easy to add new features without affecting existing code
-
-## Migration Guide
-
-### Before (Mixed Logic)
-```typescript
-// Screen component with mixed UI and business logic
-function BatteryScreen() {
-    const [level, setLevel] = useState(null);
-    
-    useEffect(() => {
-        Battery.getBatteryLevelAsync().then(setLevel);
-    }, []);
-    
-    return <Text>{level}%</Text>;
-}
-```
-
-### After (Separated Logic)
-```typescript
-// Service handles business logic
-class BatteryService {
-    async getBatteryLevel() {
-        return await Battery.getBatteryLevelAsync();
-    }
-}
-
-// Hook manages state
-function useBattery() {
-    const [level, setLevel] = useState(null);
-    // State management logic
-    return { level };
-}
-
-// Screen handles only UI
-function BatteryScreen() {
-    const { level } = useBattery();
-    return <Text>{level}%</Text>;
-}
-```
-
-## Best Practices
-
-1. **Keep UI components pure**: They should only handle presentation
-2. **Use services for external calls**: API calls, device APIs, etc.
-3. **Manage state in hooks**: Coordinate between services and UI
-4. **Validate data with utilities**: Centralize validation logic
-5. **Use TypeScript interfaces**: Define clear contracts between layers 
+1. **Maintainability**: Clear separation makes code easier to understand and modify
+2. **Testability**: Business logic can be tested independently of UI
+3. **Reusability**: Services and hooks can be reused across components
+4. **Type Safety**: Full TypeScript support with proper interfaces
+5. **Scalability**: Easy to add new features following established patterns 

@@ -1,10 +1,7 @@
-import { Mechanic, mechanicService } from '@/services/mechanicService';
+import { mechanicService } from '@/services/mechanicService';
+import { Location } from '@/types/location';
+import { Mechanic, MechanicState } from '@/types/mechanic';
 import { useCallback, useState } from 'react';
-
-interface Location {
-  latitude: number;
-  longitude: number;
-}
 
 export interface UseMechanicsReturn {
   mechanics: Mechanic[];
@@ -19,17 +16,23 @@ export interface UseMechanicsReturn {
 }
 
 export function useMechanics(): UseMechanicsReturn {
-  const [mechanics, setMechanics] = useState<Mechanic[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
+  const [state, setState] = useState<MechanicState>({
+    mechanics: [],
+    loading: false,
+    error: null,
+    currentPage: 1,
+    totalPages: 1,
+    hasMorePages: false,
+    currentLocation: null,
+  });
+
+  const updateState = useCallback((updates: Partial<MechanicState>) => {
+    setState(prev => ({ ...prev, ...updates }));
+  }, []);
 
   const fetchMechanics = useCallback(async (location: Location, page: number = 1) => {
     try {
-      setLoading(true);
-      setError(null);
+      updateState({ loading: true, error: null });
 
       const response = await mechanicService.getNearbyMechanics(
         location.latitude,
@@ -50,44 +53,45 @@ export function useMechanics(): UseMechanicsReturn {
 
       console.log('Valid mechanics found:', validMechanics.length, 'out of', response.mechanics.length);
 
-      if (page === 1) {
-        // First page - replace all mechanics
-        setMechanics(validMechanics);
-      } else {
-        // Subsequent pages - append mechanics
-        setMechanics(prev => [...prev, ...validMechanics]);
-      }
+      const newMechanics = page === 1 ? validMechanics : [...state.mechanics, ...validMechanics];
+      const hasMorePages = response.page < response.total_pages;
 
-      setCurrentPage(response.page);
-      setTotalPages(response.total_pages);
-      setCurrentLocation(location);
+      updateState({
+        mechanics: newMechanics,
+        currentPage: response.page,
+        totalPages: response.total_pages,
+        hasMorePages,
+        currentLocation: location,
+        loading: false,
+      });
     } catch (error: any) {
-      setError(error.message || 'Failed to fetch mechanics');
+      updateState({
+        error: error.message || 'Failed to fetch mechanics',
+        loading: false,
+      });
       console.error('Error fetching mechanics:', error);
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  }, [state.mechanics, updateState]);
 
   const loadMoreMechanics = useCallback(async () => {
-    if (currentLocation && currentPage < totalPages && !loading) {
-      await fetchMechanics(currentLocation, currentPage + 1);
+    if (state.currentLocation && state.currentPage < state.totalPages && !state.loading) {
+      await fetchMechanics(state.currentLocation, state.currentPage + 1);
     }
-  }, [currentLocation, currentPage, totalPages, loading, fetchMechanics]);
+  }, [state.currentLocation, state.currentPage, state.totalPages, state.loading, fetchMechanics]);
 
   const refreshMechanics = useCallback(async () => {
-    if (currentLocation) {
-      await fetchMechanics(currentLocation, 1);
+    if (state.currentLocation) {
+      await fetchMechanics(state.currentLocation, 1);
     }
-  }, [currentLocation, fetchMechanics]);
+  }, [state.currentLocation, fetchMechanics]);
 
   return {
-    mechanics,
-    loading,
-    error,
-    currentPage,
-    totalPages,
-    hasMorePages: currentPage < totalPages,
+    mechanics: state.mechanics,
+    loading: state.loading,
+    error: state.error,
+    currentPage: state.currentPage,
+    totalPages: state.totalPages,
+    hasMorePages: state.hasMorePages,
     fetchMechanics,
     loadMoreMechanics,
     refreshMechanics,

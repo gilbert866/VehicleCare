@@ -1,4 +1,4 @@
-import { Location as LocationType } from '@/types';
+import { Location } from '@/types/location';
 import * as Location from 'expo-location';
 
 class LocationService {
@@ -12,7 +12,7 @@ class LocationService {
         }
     }
 
-    async getCurrentLocation(): Promise<LocationType> {
+    async getCurrentLocation(): Promise<Location> {
         try {
             const hasPermission = await this.requestLocationPermission();
             if (!hasPermission) {
@@ -58,7 +58,7 @@ class LocationService {
     async getLocationWithCustomDelta(
         latitudeDelta: number = 0.01,
         longitudeDelta: number = 0.01
-    ): Promise<LocationType> {
+    ): Promise<Location> {
         try {
             const location = await this.getCurrentLocation();
             return {
@@ -73,7 +73,7 @@ class LocationService {
     }
 
     // Get a default location (useful for fallback)
-    getDefaultLocation(): LocationType {
+    getDefaultLocation(): Location {
         return {
             latitude: 37.7749, // San Francisco coordinates as default
             longitude: -122.4194,

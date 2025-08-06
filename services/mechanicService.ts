@@ -1,23 +1,5 @@
 import { API_CONFIG, ENDPOINTS } from '@/constants/api';
-
-export interface Mechanic {
-  id: number;
-  shop_name: string;
-  latitude: number;
-  longitude: number;
-  distance_km: number;
-}
-
-export interface NearbyMechanicsResponse {
-  mechanics: Mechanic[];
-  page: number;
-  total_pages: number;
-}
-
-export interface MechanicError {
-  message: string;
-  status?: number;
-}
+import { MechanicError, NearbyMechanicsResponse } from '@/types/mechanic';
 
 class MechanicService {
   private baseURL = API_CONFIG.BACKEND_BASE_URL;
