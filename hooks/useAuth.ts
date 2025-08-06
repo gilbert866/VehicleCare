@@ -1,88 +1,136 @@
-import { authService, AuthUser } from '@/services/authService';
-import { useEffect, useState } from 'react';
+import { authService } from '@/services/authService';
+import { AuthCredentials, AuthState, User } from '@/types/auth';
+import { useCallback, useEffect, useState } from 'react';
+
+// Helper function to convert AuthUser to User
+const convertAuthUserToUser = (authUser: any): User | null => {
+    if (!authUser) return null;
+    return {
+        id: authUser.uid || authUser.id?.toString() || '0',
+        name: authUser.displayName || authUser.username || authUser.email || 'User',
+        email: authUser.email || '',
+    };
+};
 
 export interface UseAuthReturn {
-  user: AuthUser | null;
-  loading: boolean;
-  signIn: (emailOrUsername: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName: string, username: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  getUserProfile: (uid: string) => Promise<any>;
-  updateUserProfile: (uid: string, updates: any) => Promise<void>;
-  isAuthenticated: () => Promise<boolean>;
+    user: User | null;
+    isAuthenticated: boolean;
+    loading: boolean;
+    error: string | null;
+    login: (credentials: AuthCredentials) => Promise<void>;
+    register: (credentials: AuthCredentials) => Promise<void>;
+    logout: () => Promise<void>;
+    clearError: () => void;
 }
 
-export function useAuth(): UseAuthReturn {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+export const useAuth = (): UseAuthReturn => {
+    const [state, setState] = useState<AuthState>({
+        user: null,
+        isAuthenticated: false,
+        loading: true,
+        error: null,
+    });
 
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const isAuth = await authService.isAuthenticated();
-        if (isAuth) {
-          const currentUser = authService.getCurrentUser();
-          setUser(currentUser);
+    const updateState = useCallback((updates: Partial<AuthState>) => {
+        setState(prev => ({ ...prev, ...updates }));
+    }, []);
+
+    const login = useCallback(async (credentials: AuthCredentials) => {
+        try {
+            updateState({ loading: true, error: null });
+            const authUser = await authService.signIn(credentials.email, credentials.password);
+            const user = convertAuthUserToUser(authUser);
+            updateState({ 
+                user, 
+                isAuthenticated: true, 
+                loading: false 
+            });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Login failed';
+            updateState({ 
+                error: errorMessage, 
+                loading: false 
+            });
         }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-      } finally {
-      setLoading(false);
-      }
+    }, [updateState]);
+
+    const register = useCallback(async (credentials: AuthCredentials) => {
+        try {
+            updateState({ loading: true, error: null });
+            const authUser = await authService.signUp(
+                credentials.email, 
+                credentials.password, 
+                credentials.name || credentials.email, 
+                credentials.email
+            );
+            const user = convertAuthUserToUser(authUser);
+            updateState({ 
+                user, 
+                isAuthenticated: true, 
+                loading: false 
+            });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Registration failed';
+            updateState({ 
+                error: errorMessage, 
+                loading: false 
+            });
+        }
+    }, [updateState]);
+
+    const logout = useCallback(async () => {
+        try {
+            updateState({ loading: true });
+            await authService.signOut();
+            updateState({ 
+                user: null, 
+                isAuthenticated: false, 
+                loading: false 
+            });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Logout failed';
+            updateState({ 
+                error: errorMessage, 
+                loading: false 
+            });
+        }
+    }, [updateState]);
+
+    const clearError = useCallback(() => {
+        updateState({ error: null });
+    }, [updateState]);
+
+    // Check authentication status on mount
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const authUser = authService.getCurrentUser();
+                const user = convertAuthUserToUser(authUser);
+                updateState({ 
+                    user, 
+                    isAuthenticated: !!user, 
+                    loading: false 
+                });
+            } catch (error) {
+                updateState({ 
+                    user: null, 
+                    isAuthenticated: false, 
+                    loading: false 
+                });
+            }
+        };
+
+        checkAuth();
+    }, [updateState]);
+
+    return {
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        loading: state.loading,
+        error: state.error,
+        login,
+        register,
+        logout,
+        clearError,
     };
-
-    initializeAuth();
-  }, []);
-
-  const signIn = async (emailOrUsername: string, password: string): Promise<void> => {
-    try {
-      const authUser = await authService.signIn(emailOrUsername, password);
-      console.log('useAuth - signIn successful, setting user:', authUser);
-      setUser(authUser);
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const signUp = async (email: string, password: string, displayName: string, username: string): Promise<void> => {
-    try {
-      const authUser = await authService.signUp(email, password, displayName, username);
-      console.log('useAuth - signUp successful, setting user:', authUser);
-      setUser(authUser);
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const signOut = async (): Promise<void> => {
-    try {
-      await authService.signOut();
-      setUser(null);
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const getUserProfile = async (uid: string) => {
-    return await authService.getUserProfile(uid);
-  };
-
-  const updateUserProfile = async (uid: string, updates: any) => {
-    await authService.updateUserProfile(uid, updates);
-  };
-
-  const isAuthenticated = async (): Promise<boolean> => {
-    return await authService.isAuthenticated();
-  };
-
-  return {
-    user,
-    loading,
-    signIn,
-    signUp,
-    signOut,
-    getUserProfile,
-    updateUserProfile,
-    isAuthenticated
-  };
-} 
+}; 

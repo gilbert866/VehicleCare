@@ -1,7 +1,6 @@
 import FloatingChatButton from '@/components/FloatingChatButton/FloatingChatButton';
 import { MechanicList } from '@/components/MechanicList';
 import { MechanicMarker } from '@/components/MechanicMarker';
-import SearchBar from '@/components/SeacrchBar/SearchBar';
 import { UserLocationMarker } from '@/components/UserLocationMarker';
 import { Colors } from '@/constants/Colors';
 import { useLocation } from '@/hooks/useLocation';
@@ -35,7 +34,6 @@ const ExploreScreen = () => {
     } = useMechanics();
     
     const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
-    const [selectedMechanic, setSelectedMechanic] = useState<any>(null);
 
     // Fetch mechanics when location is available
     useEffect(() => {
@@ -67,7 +65,6 @@ const ExploreScreen = () => {
     };
 
     const handleMechanicPress = (mechanic: any) => {
-        setSelectedMechanic(mechanic);
         // You can navigate to a mechanic detail screen here
         Alert.alert(
             mechanic.shop_name,
@@ -77,10 +74,6 @@ const ExploreScreen = () => {
                 { text: 'Contact', onPress: () => router.push('/chat') }
             ]
         );
-    };
-
-    const toggleViewMode = () => {
-        setViewMode(viewMode === 'map' ? 'list' : 'map');
     };
 
     const isLoading = locationLoading || mechanicsLoading;
@@ -311,13 +304,6 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#007AFF',
         fontWeight: '500',
-    },
-    searchWrapper: {
-        position: 'absolute',
-        top: Platform.OS === 'ios' ? 180 : 160,
-        left: 16,
-        right: 16,
-        zIndex: 10,
     },
     errorBanner: {
         position: 'absolute',

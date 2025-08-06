@@ -1,58 +1,41 @@
-// Message types for chat functionality
-export interface Message {
-    id: string;
-    sender: 'user' | 'bot';
+// Export all types from their respective domain files
+export * from './api';
+export * from './auth';
+export * from './battery';
+export * from './chat';
+export * from './location';
+export * from './mechanic';
+
+// Common UI types
+export interface ThemeColors {
+    primary: string;
+    secondary: string;
+    background: string;
+    surface: string;
     text: string;
+    textSecondary: string;
+    border: string;
+    error: string;
+    success: string;
+    warning: string;
 }
 
-// Location and map related types
-export interface Location {
-    latitude: number;
-    longitude: number;
-    latitudeDelta: number;
-    longitudeDelta: number;
+export interface AppTheme {
+    light: ThemeColors;
+    dark: ThemeColors;
 }
 
-export interface Place {
-    place_id: string;
-    name: string;
-    vicinity: string;
-    geometry: {
-        location: {
-            lat: number;
-            lng: number;
-        };
-    };
+// Navigation types
+export interface NavigationState {
+    currentRoute: string;
+    previousRoute?: string;
+    params?: Record<string, any>;
 }
 
-// Authentication types
-export interface User {
-    id: string;
-    name: string;
-    email: string;
-}
-
-export interface AuthCredentials {
-    name?: string;
-    email: string;
-    password: string;
-}
-
-// Battery monitoring types
-export interface BatteryInfo {
-    level: number | null;
-    isCharging?: boolean;
-    isLowPowerMode?: boolean;
-}
-
-// API response types
-export interface ApiResponse<T> {
-    data: T;
-    status: number;
-    message?: string;
-}
-
-export interface PlacesApiResponse {
-    results: Place[];
-    status: string;
+// App state types
+export interface AppState {
+    theme: 'light' | 'dark';
+    isLoading: boolean;
+    error: string | null;
+    networkStatus: 'online' | 'offline';
 } 
