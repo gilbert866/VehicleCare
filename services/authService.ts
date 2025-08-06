@@ -30,9 +30,10 @@ class AuthService {
     try {
       // Register with backend using provided username
       const backendResponse = await backendAuthService.register(email, password, displayName, 'customer', username);
-      
+
       // Store the backend user and token
       this.currentBackendUser = backendResponse.user;
+      console.log('Auth service - Storing token during signup:', backendResponse.token ? 'Token exists' : 'No token');
       await backendAuthService.storeToken(backendResponse.token);
 
       return {
@@ -55,6 +56,7 @@ class AuthService {
       
       // Store the backend user and token
       this.currentBackendUser = backendResponse.user;
+      console.log('Auth service - Storing token during signin:', backendResponse.token ? 'Token exists' : 'No token');
       await backendAuthService.storeToken(backendResponse.token);
 
       return {
@@ -162,7 +164,7 @@ class AuthService {
     if (error.message && typeof error.message === 'string') {
       message = error.message;
     } else {
-      message = error.message || message;
+        message = error.message || message;
     }
 
     return {

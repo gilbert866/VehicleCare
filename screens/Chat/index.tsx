@@ -2,6 +2,7 @@ import { useChat } from '@/hooks/useChat';
 import styles from '@/screens/Chat/style';
 import { useNavigation } from 'expo-router';
 import {
+    Alert,
     FlatList,
     Keyboard,
     KeyboardAvoidingView,
@@ -15,10 +16,28 @@ import {
 
 export default function ChatScreen() {
     const navigation = useNavigation();
-    const { messages, input, setInput, loading, sendMessage } = useChat();
+    const { messages, input, setInput, loading, sendMessage, clearChat } = useChat();
 
     const handleSendMessage = () => {
         sendMessage();
+    };
+
+    const handleClearChat = () => {
+        Alert.alert(
+            'Clear Chat',
+            'Are you sure you want to clear all messages?',
+            [
+                {
+                    text: 'Cancel',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Clear',
+                    style: 'destructive',
+                    onPress: clearChat,
+                },
+            ]
+        );
     };
 
     return (
@@ -35,6 +54,9 @@ export default function ChatScreen() {
                             <Text style={styles.back}>←</Text>
                         </TouchableOpacity>
                         <Text style={styles.headerTitle}>Chat Assistant</Text>
+                        <TouchableOpacity onPress={handleClearChat}>
+                            <Text style={styles.clearButton}>Clear</Text>
+                        </TouchableOpacity>
                     </View>
 
                     {/* Messages */}
@@ -66,11 +88,13 @@ export default function ChatScreen() {
                             returnKeyType="send"
                             onSubmitEditing={handleSendMessage}
                             editable={!loading}
+                            multiline
+                            maxLength={500}
                         />
                         <TouchableOpacity 
                             onPress={handleSendMessage} 
                             style={[styles.sendButton, loading && styles.sendButtonDisabled]}
-                            disabled={loading}
+                            disabled={loading || !input.trim()}
                         >
                             <Text style={styles.sendText}>
                                 {loading ? 'Sending...' : 'Send'}
