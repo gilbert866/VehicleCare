@@ -36,3 +36,8 @@ yarn-error.*
 app-example
 # Environment variables
 .env
+
+# IDEs
+.vscode
+.idea
+
