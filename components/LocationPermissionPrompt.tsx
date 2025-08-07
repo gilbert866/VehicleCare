@@ -7,9 +7,10 @@ import {
     isSmallScreen
 } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Alert,
+    BackHandler,
     Linking,
     Modal,
     Platform,
@@ -33,13 +34,37 @@ export const LocationPermissionPrompt: React.FC<LocationPermissionPromptProps> =
     onUseDefaultLocation,
 }) => {
     const [isRequesting, setIsRequesting] = useState(false);
+    const [hasAttemptedPermission, setHasAttemptedPermission] = useState(false);
+
+    // Prevent back button from dismissing the modal on Android
+    useEffect(() => {
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+            if (visible) {
+                // Show confirmation dialog instead of dismissing
+                Alert.alert(
+                    'Location Required',
+                    'Location access is needed to find nearby mechanics. Are you sure you want to continue without location?',
+                    [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Continue Without Location', onPress: onUseDefaultLocation },
+                    ]
+                );
+                return true; // Prevent default back behavior
+            }
+            return false;
+        });
+
+        return () => backHandler.remove();
+    }, [visible, onUseDefaultLocation]);
 
     const handleRequestPermission = async () => {
         setIsRequesting(true);
+        setHasAttemptedPermission(true);
         try {
             await onRequestPermission();
         } catch (error) {
             console.error('Permission request failed:', error);
+            // Don't auto-dismiss on error, let user try again
         } finally {
             setIsRequesting(false);
         }
@@ -87,6 +112,24 @@ export const LocationPermissionPrompt: React.FC<LocationPermissionPromptProps> =
         );
     };
 
+    const handleDismiss = () => {
+        if (hasAttemptedPermission) {
+            // If user has attempted permission, show confirmation
+            Alert.alert(
+                'Location Access Required',
+                'Location access is needed to find nearby mechanics. Would you like to continue without location or try again?',
+                [
+                    { text: 'Try Again', onPress: handleRequestPermission },
+                    { text: 'Continue Without Location', onPress: onUseDefaultLocation },
+                    { text: 'Cancel', style: 'cancel' },
+                ]
+            );
+        } else {
+            // If user hasn't tried yet, just dismiss
+            onDismiss();
+        }
+    };
+
     const getInstructions = () => {
         if (Platform.OS === 'ios') {
             return [
@@ -111,7 +154,7 @@ export const LocationPermissionPrompt: React.FC<LocationPermissionPromptProps> =
             visible={visible}
             transparent
             animationType="fade"
-            onRequestClose={onDismiss}
+            onRequestClose={handleDismiss}
         >
             <View style={styles.overlay}>
                 <View style={styles.container}>
@@ -204,7 +247,7 @@ export const LocationPermissionPrompt: React.FC<LocationPermissionPromptProps> =
 
                         <TouchableOpacity
                             style={styles.dismissButton}
-                            onPress={onDismiss}
+                            onPress={handleDismiss}
                         >
                             <Text style={styles.dismissButtonText}>Maybe Later</Text>
                         </TouchableOpacity>

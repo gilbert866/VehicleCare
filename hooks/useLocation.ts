@@ -57,18 +57,27 @@ export const useLocation = (): UseLocationReturn => {
             
             const status = await locationService.requestLocationPermission();
             setPermissionStatus(status);
-            setShowPermissionPrompt(false);
             
             if (status.granted) {
                 // If permission granted, get location immediately
-                await getCurrentLocation();
+                try {
+                    const location = await locationService.getCurrentLocation();
+                    updateState({ location, loading: false });
+                    setShowPermissionPrompt(false);
+                } catch (locationError) {
+                    const errorMessage = locationError instanceof Error ? locationError.message : 'Failed to get location';
+                    updateState({ error: errorMessage, loading: false });
+                }
             } else {
+                // If permission denied, keep the prompt visible
                 updateState({ loading: false });
+                // Don't auto-dismiss the prompt, let user try again or use default location
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Failed to request location permission';
             console.error('useLocation - Permission request error:', errorMessage);
             updateState({ error: errorMessage, loading: false });
+            // Don't auto-dismiss the prompt on error
         }
     }, [updateState]);
 
@@ -99,6 +108,7 @@ export const useLocation = (): UseLocationReturn => {
             const errorMessage = error instanceof Error ? error.message : 'Failed to get location';
             console.error('useLocation - Location error:', errorMessage);
             updateState({ error: errorMessage, loading: false });
+            // Don't auto-dismiss the prompt on error, let user try again
         }
     }, [updateState, checkLocationPermission, permissionStatus]);
 

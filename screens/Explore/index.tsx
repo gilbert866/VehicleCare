@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
     },
     floatingChatContainer: {
         position: 'absolute',
-        bottom: SPACING.XL,
+        top: '80%',
         right: SPACING.L,
         zIndex: 10,
     },

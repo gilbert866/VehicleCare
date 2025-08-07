@@ -89,10 +89,13 @@ class ChatService {
      * Create a bot message object
      */
     createBotMessage(text: string): Message {
+        // Remove asterisks from the response text
+        const cleanedText = text.replace(/\*/g, '');
+        
         return {
             id: (Date.now() + 1).toString(),
             sender: 'bot',
-            text,
+            text: cleanedText,
             timestamp: Date.now(),
         };
     }
