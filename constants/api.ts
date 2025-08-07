@@ -2,7 +2,7 @@
 export const API_CONFIG = {
     SEARCH_RADIUS: 5000, // meters
     SEARCH_DEBOUNCE_DELAY: 500, // milliseconds
-    BACKEND_BASE_URL: "https://f63aa94456e6.ngrok-free.app",
+    BACKEND_BASE_URL: "https://5027d415920d.ngrok-free.app",
     MECHANICS_LIMIT: 10, // Number of mechanics to fetch per request
     MAX_RETRY_ATTEMPTS: 5, // Maximum retry attempts for API calls
 } as const;

@@ -1,4 +1,5 @@
 import FloatingChatButton from '@/components/FloatingChatButton/FloatingChatButton';
+import { LocationPermissionPrompt } from '@/components/LocationPermissionPrompt';
 import { MechanicList } from '@/components/MechanicList';
 import { MechanicMarker } from '@/components/MechanicMarker';
 import { UserLocationMarker } from '@/components/UserLocationMarker';
@@ -6,13 +7,20 @@ import { Colors } from '@/constants/Colors';
 import { useLocation } from '@/hooks/useLocation';
 import { useMechanics } from '@/hooks/useMechanics';
 import { calculateDistance, formatDistance } from '@/utils/distanceCalculation';
+import {
+    BORDER_RADIUS,
+    FONT_SIZES,
+    PADDING,
+    SPACING,
+    getSafeAreaInsets,
+    isSmallScreen
+} from '@/utils/responsive';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
     Linking,
-    Platform,
     SafeAreaView,
     StyleSheet,
     Text,
@@ -24,7 +32,17 @@ import AppBar from '../../components/AppBar/AppBar';
 
 const ExploreScreen = () => {
     const router = useRouter();
-    const { location, loading: locationLoading, error: locationError, getCurrentLocation, useDefaultLocation } = useLocation();
+    const { 
+        location, 
+        loading: locationLoading, 
+        error: locationError, 
+        permissionStatus,
+        showPermissionPrompt,
+        getCurrentLocation, 
+        useDefaultLocation,
+        requestLocationPermission,
+        setShowPermissionPrompt
+    } = useLocation();
     const { 
         mechanics, 
         loading: mechanicsLoading, 
@@ -224,6 +242,7 @@ const ExploreScreen = () => {
     };
 
     const isLoading = locationLoading || mechanicsLoading;
+    const safeAreaInsets = getSafeAreaInsets();
 
     return (
         <SafeAreaView style={styles.container}>
@@ -295,7 +314,7 @@ const ExploreScreen = () => {
                     )}
 
                     {/* Location Info Panel */}
-                    <View style={styles.locationInfoPanel}>
+                    <View style={[styles.locationInfoPanel, { top: safeAreaInsets.top + (isSmallScreen ? 80 : 100) }]}>
                         <View style={styles.locationIcon}>
                             <Text style={styles.locationIconText}>📍</Text>
                         </View>
@@ -311,9 +330,10 @@ const ExploreScreen = () => {
                             </Text>
                         </View>
                     </View>
+                    
                     {/* Show location error banner if there's an error but we have a fallback location */}
                     {locationError && (
-                        <View style={styles.errorBanner}>
+                        <View style={[styles.errorBanner, { top: safeAreaInsets.top + (isSmallScreen ? 200 : 240) }]}>
                             <Text style={styles.errorText}>
                                 Using default location. {locationError}
                             </Text>
@@ -365,13 +385,21 @@ const ExploreScreen = () => {
                                 console.log('Manual location request triggered');
                                 handleRetryLocation();
                             }} 
-                            style={[styles.retryButton, { marginTop: 10 }]}
+                            style={[styles.retryButton, { marginTop: SPACING.M }]}
                         >
                             <Text style={styles.retryText}>Get Location</Text>
                         </TouchableOpacity>
                     )}
                 </View>
             )}
+
+            {/* Location Permission Prompt */}
+            <LocationPermissionPrompt
+                visible={showPermissionPrompt}
+                onRequestPermission={requestLocationPermission}
+                onDismiss={() => setShowPermissionPrompt(false)}
+                onUseDefaultLocation={useDefaultLocation}
+            />
 
             <FloatingChatButton onPress={() => router.push('/chat')} />
         </SafeAreaView>
@@ -392,26 +420,26 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 20,
+        padding: PADDING.SCREEN,
     },
     text: {
-        fontSize: 16,
+        fontSize: FONT_SIZES.L,
         color: Colors.light.TEXT,
-        marginTop: 12,
+        marginTop: SPACING.M,
         textAlign: 'center',
     },
     viewToggleContainer: {
         flexDirection: 'row',
         backgroundColor: '#f0f0f0',
-        margin: 16,
-        borderRadius: 8,
-        padding: 4,
+        margin: SPACING.L,
+        borderRadius: BORDER_RADIUS.M,
+        padding: SPACING.XS,
     },
     viewToggleButton: {
         flex: 1,
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 6,
+        paddingVertical: SPACING.S,
+        paddingHorizontal: SPACING.L,
+        borderRadius: BORDER_RADIUS.S,
         alignItems: 'center',
     },
     viewToggleActive: {
@@ -426,7 +454,7 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     viewToggleText: {
-        fontSize: 14,
+        fontSize: FONT_SIZES.M,
         fontWeight: '500',
         color: '#666',
     },
@@ -436,12 +464,11 @@ const styles = StyleSheet.create({
     },
     locationInfoPanel: {
         position: 'absolute',
-        top: Platform.OS === 'ios' ? 100 : 80,
-        left: 16,
-        right: 16,
+        left: SPACING.L,
+        right: SPACING.L,
         backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 12,
+        borderRadius: BORDER_RADIUS.L,
+        padding: SPACING.M,
         flexDirection: 'row',
         alignItems: 'center',
         shadowColor: '#000',
@@ -455,69 +482,68 @@ const styles = StyleSheet.create({
         zIndex: 5,
     },
     locationIcon: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: isSmallScreen ? 28 : 32,
+        height: isSmallScreen ? 28 : 32,
+        borderRadius: isSmallScreen ? 14 : 16,
         backgroundColor: '#007AFF',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
+        marginRight: SPACING.M,
     },
     locationIconText: {
-        fontSize: 16,
+        fontSize: isSmallScreen ? 14 : 16,
     },
     locationDetails: {
         flex: 1,
     },
     locationTitle: {
-        fontSize: 14,
+        fontSize: FONT_SIZES.M,
         fontWeight: '600',
         color: '#333',
-        marginBottom: 2,
+        marginBottom: SPACING.XS,
     },
     locationCoords: {
-        fontSize: 12,
+        fontSize: FONT_SIZES.S,
         color: '#666',
     },
     mechanicsCount: {
         backgroundColor: '#f0f8ff',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
+        paddingHorizontal: SPACING.S,
+        paddingVertical: SPACING.XS,
+        borderRadius: BORDER_RADIUS.M,
     },
     mechanicsCountText: {
-        fontSize: 12,
+        fontSize: FONT_SIZES.S,
         color: '#007AFF',
         fontWeight: '500',
     },
     errorBanner: {
         position: 'absolute',
-        top: Platform.OS === 'ios' ? 240 : 220,
-        left: 16,
-        right: 16,
+        left: SPACING.L,
+        right: SPACING.L,
         backgroundColor: '#ffebee',
-        padding: 12,
-        borderRadius: 8,
+        padding: SPACING.M,
+        borderRadius: BORDER_RADIUS.M,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         zIndex: 5,
     },
     errorText: {
-        fontSize: 12,
+        fontSize: FONT_SIZES.S,
         color: '#c62828',
         flex: 1,
-        marginRight: 8,
+        marginRight: SPACING.S,
     },
     retryButton: {
         backgroundColor: Colors.light.PRIMARY,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 4,
+        paddingHorizontal: SPACING.M,
+        paddingVertical: SPACING.XS,
+        borderRadius: BORDER_RADIUS.S,
     },
     retryText: {
         color: '#fff',
-        fontSize: 12,
+        fontSize: FONT_SIZES.S,
         fontWeight: '600',
     },
     loadingOverlay: {
@@ -532,8 +558,8 @@ const styles = StyleSheet.create({
         zIndex: 15,
     },
     loadingText: {
-        marginTop: 12,
-        fontSize: 16,
+        marginTop: SPACING.M,
+        fontSize: FONT_SIZES.L,
         color: Colors.light.TEXT,
         textAlign: 'center',
     },
@@ -546,37 +572,37 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.95)',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 40,
+        padding: PADDING.SCREEN,
         zIndex: 10,
     },
     noMechanicsIcon: {
-        fontSize: 48,
-        marginBottom: 16,
+        fontSize: isSmallScreen ? 40 : 48,
+        marginBottom: SPACING.L,
     },
     noMechanicsTitle: {
-        fontSize: 20,
+        fontSize: FONT_SIZES.XXL,
         fontWeight: '600',
         color: Colors.light.TEXT,
-        marginBottom: 12,
+        marginBottom: SPACING.M,
         textAlign: 'center',
     },
     noMechanicsText: {
-        fontSize: 16,
+        fontSize: FONT_SIZES.L,
         color: Colors.light.TEXT,
         opacity: 0.7,
         textAlign: 'center',
-        lineHeight: 24,
-        marginBottom: 24,
+        lineHeight: FONT_SIZES.L * 1.4,
+        marginBottom: SPACING.L,
     },
     retryMechanicsButton: {
         backgroundColor: Colors.light.PRIMARY,
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        borderRadius: 8,
+        paddingHorizontal: SPACING.L,
+        paddingVertical: SPACING.M,
+        borderRadius: BORDER_RADIUS.M,
     },
     retryMechanicsText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: FONT_SIZES.L,
         fontWeight: '600',
     },
 });

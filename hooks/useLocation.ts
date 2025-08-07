@@ -1,4 +1,4 @@
-import { locationService } from '@/services/locationService';
+import { LocationPermissionStatus, locationService } from '@/services/locationService';
 import { Location, LocationState } from '@/types/location';
 import { useCallback, useState } from 'react';
 
@@ -6,10 +6,15 @@ export interface UseLocationReturn {
     location: Location | null;
     loading: boolean;
     error: string | null;
+    permissionStatus: LocationPermissionStatus | null;
+    showPermissionPrompt: boolean;
     getCurrentLocation: () => Promise<void>;
     getLocationWithDelta: (latDelta?: number, lonDelta?: number) => Promise<void>;
     clearError: () => void;
     useDefaultLocation: () => void;
+    requestLocationPermission: () => Promise<void>;
+    checkLocationPermission: () => Promise<void>;
+    setShowPermissionPrompt: (show: boolean) => void;
 }
 
 export const useLocation = (): UseLocationReturn => {
@@ -18,24 +23,84 @@ export const useLocation = (): UseLocationReturn => {
         loading: false,
         error: null,
     });
+    const [permissionStatus, setPermissionStatus] = useState<LocationPermissionStatus | null>(null);
+    const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
 
     const updateState = useCallback((updates: Partial<LocationState>) => {
         setState(prev => ({ ...prev, ...updates }));
     }, []);
 
+    const checkLocationPermission = useCallback(async () => {
+        try {
+            console.log('useLocation - Checking location permission...');
+            const status = await locationService.checkLocationPermission();
+            setPermissionStatus(status);
+            
+            // If permission is not granted and we can ask again, show the prompt
+            if (!status.granted && status.canAskAgain) {
+                setShowPermissionPrompt(true);
+            }
+        } catch (error) {
+            console.error('useLocation - Error checking permission:', error);
+            setPermissionStatus({
+                granted: false,
+                canAskAgain: false,
+                status: 'denied' as any,
+            });
+        }
+    }, []);
+
+    const requestLocationPermission = useCallback(async () => {
+        try {
+            console.log('useLocation - Requesting location permission...');
+            updateState({ loading: true, error: null });
+            
+            const status = await locationService.requestLocationPermission();
+            setPermissionStatus(status);
+            setShowPermissionPrompt(false);
+            
+            if (status.granted) {
+                // If permission granted, get location immediately
+                await getCurrentLocation();
+            } else {
+                updateState({ loading: false });
+            }
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to request location permission';
+            console.error('useLocation - Permission request error:', errorMessage);
+            updateState({ error: errorMessage, loading: false });
+        }
+    }, [updateState]);
+
     const getCurrentLocation = useCallback(async () => {
         try {
             console.log('useLocation - Starting location request...');
             updateState({ loading: true, error: null });
+            
+            // First check permission status
+            await checkLocationPermission();
+            
+            // Check if we have permission from the state
+            if (permissionStatus && !permissionStatus.granted) {
+                if (permissionStatus.canAskAgain) {
+                    setShowPermissionPrompt(true);
+                    updateState({ loading: false });
+                    return;
+                } else {
+                    throw new Error('Location permission denied. Please enable location services in your device settings.');
+                }
+            }
+            
             const location = await locationService.getCurrentLocation();
             console.log('useLocation - Location received:', location);
             updateState({ location, loading: false });
+            setShowPermissionPrompt(false);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Failed to get location';
             console.error('useLocation - Location error:', errorMessage);
             updateState({ error: errorMessage, loading: false });
         }
-    }, [updateState]);
+    }, [updateState, checkLocationPermission, permissionStatus]);
 
     const getLocationWithDelta = useCallback(async (latDelta?: number, lonDelta?: number) => {
         try {
@@ -56,15 +121,21 @@ export const useLocation = (): UseLocationReturn => {
         const defaultLocation = locationService.getDefaultLocation();
         console.log('useLocation - Using default location:', defaultLocation);
         updateState({ location: defaultLocation, error: null, loading: false });
+        setShowPermissionPrompt(false);
     }, [updateState]);
 
     return {
         location: state.location,
         loading: state.loading,
         error: state.error,
+        permissionStatus,
+        showPermissionPrompt,
         getCurrentLocation,
         getLocationWithDelta,
         clearError,
         useDefaultLocation,
+        requestLocationPermission,
+        checkLocationPermission,
+        setShowPermissionPrompt,
     };
 }; 

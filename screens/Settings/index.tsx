@@ -1,20 +1,22 @@
 import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/hooks/useAuth';
+import { FONT_SIZES, ICON_SIZES, PADDING, SPACING } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
     Alert,
     Image,
+    ScrollView,
     StyleSheet,
     Switch,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AppBar from '../../components/AppBar/AppBar';
-
 
 const SettingsScreen: React.FC = () => {
     const [isDarkMode, setIsDarkMode] = React.useState(false);
@@ -49,17 +51,22 @@ const SettingsScreen: React.FC = () => {
     };
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <AppBar title="Settings" />
 
+            <ScrollView 
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+            >
             {/* Profile */}
             <View style={styles.profileSection}>
                 <Image
                     source={{ uri: 'https://i.pravatar.cc/100' }}
                     style={styles.avatar}
                 />
-                <View>
-                    <Text style={styles.name}>{user?.displayName || 'User'}</Text>
+                    <View style={styles.profileInfo}>
+                        <Text style={styles.name}>{user?.username || 'User'}</Text>
                     <Text style={styles.email}>{user?.email || 'No email'}</Text>
                     {user?.username && (
                         <Text style={styles.username}>@{user.username}</Text>
@@ -74,16 +81,17 @@ const SettingsScreen: React.FC = () => {
             <View style={styles.divider} />
 
             {/* Settings List */}
+                <View style={styles.settingsContainer}>
             <TouchableOpacity style={styles.settingItem} onPress={goToRegisterVehicle}>
                 <View style={styles.iconText}>
-                    <Ionicons name="car-sport-outline" size={20} color={Colors.light.TEXT} style={styles.icon} />
+                            <Ionicons name="car-sport-outline" size={ICON_SIZES.M} color={Colors.light.TEXT} style={styles.icon} />
                     <Text style={styles.settingText}>Register a Vehicle</Text>
                 </View>
             </TouchableOpacity>
 
             <View style={styles.settingItem}>
                 <View style={styles.iconText}>
-                    <Ionicons name="moon-outline" size={20} color={Colors.light.TEXT} style={styles.icon} />
+                            <Ionicons name="moon-outline" size={ICON_SIZES.M} color={Colors.light.TEXT} style={styles.icon} />
                     <Text style={styles.settingText}>Enable Dark Mode</Text>
                 </View>
                 <Switch
@@ -96,18 +104,20 @@ const SettingsScreen: React.FC = () => {
 
             <TouchableOpacity style={styles.settingItem} onPress={toggleLanguage}>
                 <View style={styles.iconText}>
-                    <Ionicons name="language-outline" size={20} color={Colors.light.TEXT} style={styles.icon} />
+                            <Ionicons name="language-outline" size={ICON_SIZES.M} color={Colors.light.TEXT} style={styles.icon} />
                     <Text style={styles.settingText}>Language: {language.toUpperCase()}</Text>
                 </View>
             </TouchableOpacity>
 
             <TouchableOpacity style={[styles.settingItem, styles.logout]} onPress={handleLogout}>
                 <View style={styles.iconText}>
-                    <Ionicons name="log-out-outline" size={20} color="#D32F2F" style={styles.icon} />
+                            <Ionicons name="log-out-outline" size={ICON_SIZES.M} color="#D32F2F" style={styles.icon} />
                     <Text style={[styles.settingText, styles.logoutText]}>Logout</Text>
                 </View>
             </TouchableOpacity>
         </View>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 
@@ -118,53 +128,68 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: Colors.light.BACKGROUND,
     },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        paddingBottom: SPACING.XXL,
+    },
     profileSection: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 16,
-        paddingHorizontal: 16,
+        paddingVertical: SPACING.L,
+        paddingHorizontal: PADDING.SCREEN,
     },
     avatar: {
         width: 60,
         height: 60,
         borderRadius: 30,
-        marginRight: 16,
+        marginRight: SPACING.L,
+    },
+    profileInfo: {
+        flex: 1,
     },
     name: {
-        fontSize: 18,
+        fontSize: FONT_SIZES.XL,
         fontWeight: '600',
         color: Colors.light.TEXT,
+        marginBottom: SPACING.XS,
     },
     email: {
-        fontSize: 14,
+        fontSize: FONT_SIZES.M,
         color: '#888',
+        marginBottom: SPACING.XS,
     },
     username: {
-        fontSize: 12,
+        fontSize: FONT_SIZES.S,
         color: '#007AFF',
         fontWeight: '500',
-        marginTop: 2,
     },
     divider: {
         height: 1,
         backgroundColor: '#ddd',
-        marginVertical: 12,
+        marginVertical: SPACING.M,
+        marginHorizontal: PADDING.SCREEN,
+    },
+    settingsContainer: {
+        paddingHorizontal: PADDING.SCREEN,
     },
     settingItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 16,
-        paddingHorizontal: 16,
+        paddingVertical: SPACING.L,
+        paddingHorizontal: SPACING.M,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
     },
     settingText: {
-        fontSize: 16,
+        fontSize: FONT_SIZES.L,
         color: Colors.light.TEXT,
     },
     logout: {
-        marginTop: 24,
+        marginTop: SPACING.L,
+        borderBottomWidth: 0,
     },
     logoutText: {
         color: '#D32F2F',
@@ -172,8 +197,9 @@ const styles = StyleSheet.create({
     iconText: {
         flexDirection: 'row',
         alignItems: 'center',
+        flex: 1,
     },
     icon: {
-        marginRight: 10,
+        marginRight: SPACING.M,
     },
 });
