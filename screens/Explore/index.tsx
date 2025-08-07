@@ -271,37 +271,57 @@ const ExploreScreen = () => {
                     </View>
 
                     {viewMode === 'map' ? (
-                        <MapView 
-                            style={styles.map} 
-                            region={location}
-                            onRegionChangeComplete={(region) => {
-                                console.log('ExploreScreen - Map region changed:', region);
-                            }}
-                        >
-                            {/* User location marker with custom styling */}
-                            <UserLocationMarker coordinate={location} />
-                            
-                            {/* Mechanic markers - filter out invalid coordinates */}
-                            {(() => {
-                                const validMechanics = mechanics.filter(mechanic => 
-                                    mechanic && 
-                                    typeof mechanic.latitude === 'number' && 
-                                    typeof mechanic.longitude === 'number' &&
-                                    !isNaN(mechanic.latitude) && 
-                                    !isNaN(mechanic.longitude)
-                                );
-                                console.log(`ExploreScreen - Rendering ${validMechanics.length} mechanic markers on map`);
+                        <View style={styles.mapContainer}>
+                            <MapView 
+                                style={styles.map} 
+                                region={location}
+                                onRegionChangeComplete={(region) => {
+                                    console.log('ExploreScreen - Map region changed:', region);
+                                }}
+                            >
+                                {/* User location marker with custom styling */}
+                                <UserLocationMarker coordinate={location} />
                                 
-                                return validMechanics.map((mechanic, index) => (
-                                    <MechanicMarker
-                                        key={`mechanic-${mechanic.id || `${mechanic.latitude}-${mechanic.longitude}-${index}`}`}
-                                        mechanic={mechanic}
-                                        userLocation={location}
-                                        onPress={handleMechanicPress}
-                                    />
-                                ));
-                            })()}
-                        </MapView>
+                                {/* Mechanic markers - filter out invalid coordinates */}
+                                {(() => {
+                                    const validMechanics = mechanics.filter(mechanic => 
+                                        mechanic && 
+                                        typeof mechanic.latitude === 'number' && 
+                                        typeof mechanic.longitude === 'number' &&
+                                        !isNaN(mechanic.latitude) && 
+                                        !isNaN(mechanic.longitude)
+                                    );
+                                    console.log(`ExploreScreen - Rendering ${validMechanics.length} mechanic markers on map`);
+                                    
+                                    return validMechanics.map((mechanic, index) => (
+                                        <MechanicMarker
+                                            key={`mechanic-${mechanic.id || `${mechanic.latitude}-${mechanic.longitude}-${index}`}`}
+                                            mechanic={mechanic}
+                                            userLocation={location}
+                                            onPress={handleMechanicPress}
+                                        />
+                                    ));
+                                })()}
+                            </MapView>
+
+                            {/* Location Info Panel - On top of map */}
+                            <View style={styles.mapLocationPanel}>
+                                <View style={styles.locationIcon}>
+                                    <Text style={styles.locationIconText}>📍</Text>
+                                </View>
+                                <View style={styles.locationDetails}>
+                                    <Text style={styles.locationTitle}>Your Location</Text>
+                                    <Text style={styles.locationCoords}>
+                                        {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+                                    </Text>
+                                </View>
+                                <View style={styles.mechanicsCount}>
+                                    <Text style={styles.mechanicsCountText}>
+                                        {mechanics.length} {mechanics.length === 1 ? 'mechanic' : 'mechanics'} nearby
+                                    </Text>
+                                </View>
+                            </View>
+                        </View>
                     ) : (
                         <MechanicList
                             mechanics={mechanics}
@@ -312,28 +332,10 @@ const ExploreScreen = () => {
                             onRefresh={refreshMechanics}
                         />
                     )}
-
-                    {/* Location Info Panel */}
-                    <View style={[styles.locationInfoPanel, { top: safeAreaInsets.top + (isSmallScreen ? 80 : 100) }]}>
-                        <View style={styles.locationIcon}>
-                            <Text style={styles.locationIconText}>📍</Text>
-                        </View>
-                        <View style={styles.locationDetails}>
-                            <Text style={styles.locationTitle}>Your Location</Text>
-                            <Text style={styles.locationCoords}>
-                                {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
-                            </Text>
-                        </View>
-                        <View style={styles.mechanicsCount}>
-                            <Text style={styles.mechanicsCountText}>
-                                {mechanics.length} {mechanics.length === 1 ? 'mechanic' : 'mechanics'} nearby
-                            </Text>
-                        </View>
-                    </View>
                     
                     {/* Show location error banner if there's an error but we have a fallback location */}
                     {locationError && (
-                        <View style={[styles.errorBanner, { top: safeAreaInsets.top + (isSmallScreen ? 200 : 240) }]}>
+                        <View style={styles.errorBanner}>
                             <Text style={styles.errorText}>
                                 Using default location. {locationError}
                             </Text>
@@ -401,7 +403,10 @@ const ExploreScreen = () => {
                 onUseDefaultLocation={useDefaultLocation}
             />
 
-            <FloatingChatButton onPress={() => router.push('/chat')} />
+            {/* Floating Chat Button - Moved to bottom right for better visibility */}
+            <View style={styles.floatingChatContainer}>
+                <FloatingChatButton onPress={() => router.push('/chat')} />
+            </View>
         </SafeAreaView>
     );
 };
@@ -464,6 +469,7 @@ const styles = StyleSheet.create({
     },
     locationInfoPanel: {
         position: 'absolute',
+        bottom: SPACING.L,
         left: SPACING.L,
         right: SPACING.L,
         backgroundColor: '#fff',
@@ -519,6 +525,7 @@ const styles = StyleSheet.create({
     },
     errorBanner: {
         position: 'absolute',
+        top: 100,
         left: SPACING.L,
         right: SPACING.L,
         backgroundColor: '#ffebee',
@@ -604,5 +611,34 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: FONT_SIZES.L,
         fontWeight: '600',
+    },
+    floatingChatContainer: {
+        position: 'absolute',
+        bottom: SPACING.XL,
+        right: SPACING.L,
+        zIndex: 10,
+    },
+    mapContainer: {
+        flex: 1,
+    },
+    mapLocationPanel: {
+        position: 'absolute',
+        top: SPACING.L,
+        left: SPACING.L,
+        right: SPACING.L,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderRadius: BORDER_RADIUS.L,
+        padding: SPACING.M,
+        flexDirection: 'row',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        zIndex: 5,
     },
 });
